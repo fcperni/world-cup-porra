@@ -16,3 +16,10 @@ codeFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;60
 
 [browser]
 gatherUsageStats = false
+
+[server]
+# Desactiva el vigilante de archivos: en navegación recargaba módulos y provocaba
+# tanto un error de importación circular de pandas como la reinyección del CSS
+# (parpadeo de fuente). No se necesita para usar la app (los cambios de código se
+# aplican al reiniciar el servidor).
+fileWatcherType = "none"
