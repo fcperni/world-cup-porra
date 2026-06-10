@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Proyecto "Pa porra la mía" ---
+# Solo ADMIN.xlsx se despliega; los .xlsx de participantes se quedan en local.
+docs/*.xlsx
+!docs/ADMIN.xlsx
+# Cache de extracción (se regenera del Excel)
+data/extracted.json

@@ -1,0 +1,81 @@
+"""Detalle de un participante: predicciones, aciertos y puntos."""
+
+from __future__ import annotations
+
+import pandas as pd
+import streamlit as st
+
+from porra.models import KO_ORDER, Phase
+from porra.scoring import score_match, score_player
+from porra.tournament import resolved_match_teams
+from ui_common import PHASE_LABELS, configure_page, fmt, get_data, get_results
+
+configure_page()
+st.title("👤 Detalle por jugador")
+
+data = get_data()
+results = get_results()
+
+selected = st.selectbox("Jugador", [p.name for p in data.players])
+player = next(p for p in data.players if p.name == selected)
+
+score = score_player(data, results, player)
+st.metric("Puntos totales", fmt(score.total))
+
+# desglose por categoría con puntos
+active = {c: v for c, v in score.categories.items() if v}
+if active:
+    cols = st.columns(min(5, len(active)))
+    for i, (c, v) in enumerate(active.items()):
+        cols[i % len(cols)].metric(c, fmt(v))
+
+tab_grupos, tab_ko, tab_honor = st.tabs(["Fase de grupos", "Eliminatorias", "Cuadro de honor"])
+
+with tab_grupos:
+    gm = sorted([m for m in data.matches if m.phase is Phase.GROUPS], key=lambda m: (m.group, m.number))
+    rows = []
+    for m in gm:
+        pred = player.group_matches.get(m.number)
+        pts = None
+        if pred and pred.valid and results.has(m.number):
+            ah, aa = results.goals(m.number)
+            pts = score_match(data.rules, Phase.GROUPS, m.bonus, pred.sign, pred.home_goals,
+                              pred.away_goals, results.sign(m.number), ah, aa)
+        rows.append({"Grupo": m.group, "Partido": f"{m.home} - {m.away}",
+                     "Predicción": pred.raw if pred and pred.valid else "—",
+                     "Resultado": results.result_string(m.number) or "—",
+                     "Bonus": f"x{m.bonus}" if m.bonus > 1 else "",
+                     "Puntos": round(pts, 1) if pts is not None else None})
+    df = pd.DataFrame(rows)
+    gsel = st.multiselect("Filtrar por grupo", sorted(df["Grupo"].unique()))
+    if gsel:
+        df = df[df["Grupo"].isin(gsel)]
+    st.dataframe(df, hide_index=True, use_container_width=True,
+                 column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
+
+with tab_ko:
+    teams = resolved_match_teams(data, results)
+    rows = []
+    for phase in KO_ORDER:
+        for m in sorted([m for m in data.matches if m.phase is phase], key=lambda m: m.number):
+            pred = player.ko_matches.get(m.number)
+            ht, at = teams[m.number]
+            real = "—"
+            if ht and at:
+                g = results.goals(m.number)
+                real = f"{ht.name} {g[0]}-{g[1]} {at.name}" if g else f"{ht.name} - {at.name}"
+            rows.append({
+                "Ronda": PHASE_LABELS[phase],
+                "Pronóstico cruce": f"{pred.home_team} - {pred.away_team}" if pred and pred.home_team else "—",
+                "Resultado pron.": (f"{pred.sign}|{pred.home_goals}-{pred.away_goals}"
+                                    if pred and pred.sign else "—"),
+                "Cruce real": real,
+            })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+with tab_honor:
+    honor_filled = {k: v for k, v in player.honor.items() if v}
+    if honor_filled:
+        st.table(pd.DataFrame([{"Categoría": k, "Pronóstico": v} for k, v in honor_filled.items()]))
+    else:
+        st.caption("Sin pronósticos de cuadro de honor.")
