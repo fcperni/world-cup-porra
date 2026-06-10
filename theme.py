@@ -10,8 +10,8 @@ from __future__ import annotations
 import streamlit as st
 
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap');
-
+/* Las fuentes (Hanken Grotesk / Big Shoulders Display / Spline Sans Mono) las
+   carga el tema nativo desde .streamlit/config.toml para evitar el parpadeo. */
 :root{
   --ink:#0a0e13; --ink2:#0c1118;
   --surface:#141c25; --surface2:#1b2632; --line:#27333f;

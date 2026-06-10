@@ -44,16 +44,47 @@ def get_data() -> TournamentData:
     return load_tournament()
 
 
+def _sf_session():
+    """Sesión Snowpark activa si la app corre en Streamlit-in-Snowflake, o None."""
+    try:
+        from snowflake.snowpark.context import get_active_session
+        return get_active_session()
+    except Exception:
+        return None
+
+
 def get_results() -> Results:
-    """Resultados en estado de sesión (se cargan una vez desde disco)."""
+    """Resultados en estado de sesión.
+
+    En Snowflake se leen de la tabla ``PORRA_RESULTS``; en local/Cloud, del JSON.
+    """
     if "results" not in st.session_state:
-        st.session_state.results = load_results()
+        session = _sf_session()
+        if session is not None:
+            from porra.snowflake_store import load_results_sf
+            st.session_state.results = load_results_sf(session)
+        else:
+            st.session_state.results = load_results()
     return st.session_state.results
 
 
 def persist(results: Results) -> None:
-    """Guarda en disco y, si hay credenciales de GitHub en ``st.secrets``,
-    commitea ``results.json`` al repositorio (necesario en Streamlit Cloud)."""
+    """Guarda los resultados en el backend adecuado.
+
+    * Snowflake: tabla ``PORRA_RESULTS`` (Snowpark).
+    * Streamlit Cloud / local: ``data/results.json`` y, si hay credenciales de
+      GitHub en ``st.secrets``, commit al repositorio.
+    """
+    session = _sf_session()
+    if session is not None:
+        from porra.snowflake_store import save_results_sf
+        save_results_sf(session, results)
+        try:
+            st.toast("Guardado en Snowflake ✅")
+        except Exception:
+            pass
+        return
+
     save_results(results)
     gh = _github_secrets()
     if not gh:

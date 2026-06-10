@@ -76,15 +76,21 @@ class Results:
             self.matches[number] = (int(home), int(away))
 
 
+def from_dict(raw: dict) -> Results:
+    """Construye ``Results`` desde el dict serializado (mismo formato que el JSON)."""
+    raw = raw or {}
+    matches = {int(k): (int(v["home"]), int(v["away"]))
+               for k, v in (raw.get("matches") or {}).items()}
+    honor = {k: (raw.get("honor") or {}).get(k) for k in HONOR_KEYS}
+    ko_winners = {int(k): str(v) for k, v in (raw.get("ko_winners") or {}).items()}
+    return Results(matches=matches, honor=honor, ko_winners=ko_winners)
+
+
 def load_results(path: Path | str = DEFAULT_RESULTS) -> Results:
     path = Path(path)
     if not path.exists():
         return Results(honor={k: None for k in HONOR_KEYS})
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    matches = {int(k): (int(v["home"]), int(v["away"])) for k, v in raw.get("matches", {}).items()}
-    honor = {k: raw.get("honor", {}).get(k) for k in HONOR_KEYS}
-    ko_winners = {int(k): str(v) for k, v in raw.get("ko_winners", {}).items()}
-    return Results(matches=matches, honor=honor, ko_winners=ko_winners)
+    return from_dict(json.loads(path.read_text(encoding="utf-8")))
 
 
 def to_dict(results: Results) -> dict:
