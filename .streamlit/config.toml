@@ -10,9 +10,9 @@ textColor = "#eaf1f3"
 # headingFont y codeFont a Saira para que titulares y cifras sean Saira de forma
 # persistente y NO parpadeen al cambiar de página (si no, los titulares usarían la
 # fuente por defecto de Streamlit hasta que se aplicara el CSS).
-font = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
-headingFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
-codeFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+font = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap, sans-serif"
+headingFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap, sans-serif"
+codeFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap, sans-serif"
 
 [browser]
 gatherUsageStats = false
