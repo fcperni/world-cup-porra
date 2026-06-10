@@ -112,6 +112,11 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .stTabs [data-baseweb="tab-highlight"]{ background:transparent !important; height:0 !important; }
 .stTabs [data-baseweb="tab-border"]{ background:transparent !important; height:0 !important; }
 
+/* ---------- chips / tags (multiselect): lima con texto tinta (legible) ---------- */
+[data-baseweb="tag"]{ background-color:var(--lime) !important; border:0 !important; }
+[data-baseweb="tag"] *{ color:#0a0e13 !important; fill:#0a0e13 !important; }
+[data-baseweb="tag"] [role="button"]:hover{ background-color:rgba(0,0,0,.18) !important; }
+
 /* ---------- tablas / inputs ---------- */
 [data-testid="stDataFrame"], [data-testid="stTable"]{
   border:1px solid var(--line); border-radius:12px; overflow:hidden;
