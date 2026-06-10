@@ -1,53 +1,45 @@
-"""Banderas (emoji) de cada selección del Mundial 2026.
+"""Banderas de cada selección como **imágenes** (no emoji).
 
-Se generan a partir del código ISO 3166-1 alfa-2 mediante los *regional
-indicator symbols*; Inglaterra y Escocia usan los emojis de subdivisión
-(secuencias de etiquetas), que renderizan en navegadores modernos.
+Windows no renderiza los emoji de bandera de país (muestra el código ISO de dos
+letras), así que servimos imágenes de https://flagcdn.com por código ISO 3166-1
+alfa-2; Inglaterra y Escocia usan los códigos de subdivisión ``gb-eng``/``gb-sct``.
+
+Uso:
+* :func:`flag_url` → URL de la imagen (para ``st.column_config.ImageColumn``).
+* :func:`flag_img` → etiqueta ``<img>`` lista para HTML (``st.markdown``).
 
 Los nombres deben coincidir EXACTAMENTE con los de la tabla de equipos del Excel.
 """
 
 from __future__ import annotations
 
-# Selección -> código ISO alfa-2 (o None si usa emoji especial)
-_ISO = {
-    "México": "MX", "Sudáfrica": "ZA", "Corea del Sur": "KR", "República Checa": "CZ",
-    "Canadá": "CA", "Bosnia y Herzegovina": "BA", "Catar": "QA", "Suiza": "CH",
-    "Brasil": "BR", "Marruecos": "MA", "Haití": "HT",
-    "Estados Unidos": "US", "Paraguay": "PY", "Australia": "AU", "Turquía": "TR",
-    "Alemania": "DE", "Curazao": "CW", "Costa de Marfil": "CI", "Ecuador": "EC",
-    "Países Bajos": "NL", "Japón": "JP", "Suecia": "SE", "Túnez": "TN",
-    "Bélgica": "BE", "Egipto": "EG", "Irán": "IR", "Nueva Zelanda": "NZ",
-    "España": "ES", "Cabo Verde": "CV", "Arabia Saudita": "SA", "Uruguay": "UY",
-    "Francia": "FR", "Senegal": "SN", "Irak": "IQ", "Noruega": "NO",
-    "Argentina": "AR", "Argelia": "DZ", "Austria": "AT", "Jordania": "JO",
-    "Portugal": "PT", "RD Congo": "CD", "Uzbekistán": "UZ", "Colombia": "CO",
-    "Croacia": "HR", "Ghana": "GH", "Panamá": "PA",
-}
-
-# Subdivisiones del Reino Unido (secuencias de etiquetas Unicode).
-_SPECIAL = {
-    "Inglaterra": "\U0001F3F4\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F",
-    "Escocia": "\U0001F3F4\U000E0067\U000E0062\U000E0073\U000E0063\U000E0074\U000E007F",
+# Selección -> código de flagcdn (ISO alfa-2 en minúsculas; subdivisiones para UK)
+_CODE = {
+    "México": "mx", "Sudáfrica": "za", "Corea del Sur": "kr", "República Checa": "cz",
+    "Canadá": "ca", "Bosnia y Herzegovina": "ba", "Catar": "qa", "Suiza": "ch",
+    "Brasil": "br", "Marruecos": "ma", "Haití": "ht", "Escocia": "gb-sct",
+    "Estados Unidos": "us", "Paraguay": "py", "Australia": "au", "Turquía": "tr",
+    "Alemania": "de", "Curazao": "cw", "Costa de Marfil": "ci", "Ecuador": "ec",
+    "Países Bajos": "nl", "Japón": "jp", "Suecia": "se", "Túnez": "tn",
+    "Bélgica": "be", "Egipto": "eg", "Irán": "ir", "Nueva Zelanda": "nz",
+    "España": "es", "Cabo Verde": "cv", "Arabia Saudita": "sa", "Uruguay": "uy",
+    "Francia": "fr", "Senegal": "sn", "Irak": "iq", "Noruega": "no",
+    "Argentina": "ar", "Argelia": "dz", "Austria": "at", "Jordania": "jo",
+    "Portugal": "pt", "RD Congo": "cd", "Uzbekistán": "uz", "Colombia": "co",
+    "Inglaterra": "gb-eng", "Croacia": "hr", "Ghana": "gh", "Panamá": "pa",
 }
 
 
-def _iso_to_emoji(code: str) -> str:
-    return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code.upper())
+def flag_url(name: str | None, width: int = 40) -> str:
+    """URL de la imagen de bandera (``""`` si no se reconoce la selección)."""
+    code = _CODE.get(name or "")
+    return f"https://flagcdn.com/w{width}/{code}.png" if code else ""
 
 
-FLAGS: dict[str, str] = {name: _iso_to_emoji(code) for name, code in _ISO.items()}
-FLAGS.update(_SPECIAL)
-
-
-def flag(name: str | None) -> str:
-    """Emoji de bandera de una selección, o cadena vacía si no se reconoce."""
-    return FLAGS.get(name or "", "")
-
-
-def with_flag(name: str | None, sep: str = " ") -> str:
-    """``"Francia"`` -> ``"🇫🇷 Francia"`` (sin bandera si no se reconoce)."""
-    if not name:
-        return name or ""
-    f = FLAGS.get(name, "")
-    return f"{f}{sep}{name}" if f else name
+def flag_img(name: str | None, height: int = 13) -> str:
+    """Etiqueta ``<img>`` de la bandera para incrustar en HTML."""
+    url = flag_url(name)
+    if not url:
+        return ""
+    return (f'<img class="fl-img" src="{url}" height="{height}" '
+            f'alt="{name}" loading="lazy">')

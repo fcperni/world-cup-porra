@@ -6,7 +6,7 @@ from datetime import date
 
 import streamlit as st
 
-from porra.flags import flag
+from porra.flags import flag_img
 from porra.models import Phase
 from porra.tournament import resolved_match_teams
 from ui_common import PHASE_LABELS, configure_page, get_data, get_results
@@ -45,7 +45,7 @@ def names(m):
 
 def team_html(name: str, side: str, placeholder: bool) -> str:
     cls = f"fx-team {side}" + (" ph" if placeholder else "")
-    fl = "" if placeholder else flag(name)
+    fl = "" if placeholder else flag_img(name, height=15)
     chip = f'<span class="fl">{fl}</span>' if fl else ""
     nm = f'<span class="nm">{name}</span>'
     inner = f"{nm} {chip}" if side == "home" else f"{chip} {nm}"
@@ -61,7 +61,7 @@ def score_html(m) -> str:
     if m.phase.is_knockout and g[0] == g[1] and m.number in results.ko_winners:
         side = results.ko_winners[m.number]
         h, a, _ = names(m)
-        extra = f'<span class="pen">pen {flag(h if side=="home" else a)}</span>'
+        extra = f'<span class="pen">pen {flag_img(h if side=="home" else a, height=9)}</span>'
     return f'<div class="fx-score played">{g[0]}-{g[1]}{extra}</div>'
 
 

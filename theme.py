@@ -206,7 +206,8 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .fx-team{ font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase;
   font-size:1.2rem; letter-spacing:.01em; display:flex; align-items:center; gap:9px; min-width:0; }
 .fx-team.home{ justify-content:flex-end; text-align:right; }
-.fx-team .fl{ font-size:1.3rem; line-height:1; }
+.fx-team .fl{ display:inline-flex; align-items:center; line-height:1; }
+.fl-img{ border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.12); vertical-align:middle; }
 .fx-team .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fx-team.ph .nm{ color:var(--muted); font-size:.92rem; font-family:'Spline Sans Mono',monospace; text-transform:none; }
 .fx-score{ font-family:'Spline Sans Mono',monospace; font-weight:600; text-align:center;
