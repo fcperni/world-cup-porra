@@ -218,8 +218,37 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 @media (max-width:640px){
   .fx-row{ grid-template-columns:1fr 58px 1fr; gap:8px; padding:8px 11px; }
   .fx-tag{ display:none; }
-  .fx-team{ font-size:1rem; } .fx-team .fl{ font-size:1.05rem; }
+  .fx-team{ font-size:1rem; }
 }
+
+/* ---------- cuadro de eliminatorias (bracket) ---------- */
+.bracket{ display:flex; gap:22px; overflow-x:auto; padding:4px 2px 16px; }
+.bk-col{ display:flex; flex-direction:column; min-width:190px; flex:0 0 auto; }
+.bk-col-label{
+  font-family:'Spline Sans Mono',monospace; text-transform:uppercase; letter-spacing:.14em;
+  font-size:.68rem; color:var(--lime); text-align:center; margin-bottom:.5rem;
+}
+.bk-col-body{ flex:1; display:flex; flex-direction:column; justify-content:space-around; gap:12px; }
+.bk-match{
+  background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:10px; overflow:hidden; box-shadow:var(--shadow);
+  animation:rise .45s cubic-bezier(.2,.7,.2,1) both;
+}
+.bk-side{ display:flex; align-items:center; gap:8px; padding:7px 10px;
+  font-family:'Big Shoulders Display',sans-serif; }
+.bk-side + .bk-side{ border-top:1px solid var(--line); }
+.bk-side .nm{ flex:1; text-transform:uppercase; font-size:.98rem; letter-spacing:.01em;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bk-side .sc{ font-family:'Spline Sans Mono',monospace; font-weight:600; color:var(--muted); min-width:14px; text-align:right; }
+.bk-side.win{ background:rgba(194,242,60,.10); }
+.bk-side.win .nm{ color:var(--lime); } .bk-side.win .sc{ color:var(--lime); }
+.bk-side.ph .nm{ color:var(--muted); font-family:'Spline Sans Mono',monospace;
+  font-size:.74rem; text-transform:none; letter-spacing:.02em; }
+.bk-third{ margin-top:1rem; max-width:230px; }
+.bk-third .bk-col-label{ color:var(--gold); text-align:left; }
+.bk-third .bk-match{ border-color:rgba(243,196,75,.4); }
+.bk-third .bk-side.win .nm, .bk-third .bk-side.win .sc{ color:var(--gold); }
+.bk-third .bk-side.win{ background:rgba(243,196,75,.1); }
 
 /* ---------- móvil ---------- */
 @media (max-width:820px){
