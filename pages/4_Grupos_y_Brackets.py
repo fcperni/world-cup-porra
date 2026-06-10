@@ -8,7 +8,7 @@ import streamlit as st
 
 from porra.flags import flag_img
 from porra.models import Phase
-from porra.tournament import compute_group_standings, resolved_match_teams
+from porra.tournament import compute_group_standings, qualified_thirds_groups, resolved_match_teams
 from ui_common import configure_page, get_data, get_results
 
 configure_page()
@@ -20,13 +20,19 @@ results = get_results()
 tab_grupos, tab_brackets = st.tabs(["Clasificación de grupos", "Eliminatorias"])
 
 with tab_grupos:
-    st.caption("Las dos primeras selecciones (en verde) avanzan a dieciseisavos.")
+    st.caption(
+        "Avanzan a dieciseisavos los **dos primeros** de cada grupo (verde) y los "
+        "**ocho mejores terceros** (ámbar)."
+    )
     standings = compute_group_standings(data, results)
+    group_played = any(results.has(m.number) for m in data.matches if m.phase is Phase.GROUPS)
+    # grupos cuyo 3º clasifica (provisional mientras se juega; vacío sin resultados)
+    best_thirds = set(qualified_thirds_groups(standings)) if group_played else set()
     cards = []
     for group, ranked in standings.items():
         body = []
         for pos, r in enumerate(ranked, 1):
-            cls = "q" if pos <= 2 else ""
+            cls = "q" if pos <= 2 else "q3" if pos == 3 and group in best_thirds else ""
             if r.team.name == "España":
                 cls = (cls + " esp").strip()
             dg = f"+{r.gd}" if r.gd > 0 else str(r.gd)

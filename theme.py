@@ -285,6 +285,8 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .grp-t td.pts{ font-weight:800; color:var(--text); }
 .grp-t tr.q{ background:rgba(194,242,60,.07); box-shadow:inset 2px 0 0 var(--lime); }
 .grp-t tr.q td.pos{ color:var(--lime); font-weight:800; }
+.grp-t tr.q3{ background:rgba(243,196,75,.08); box-shadow:inset 2px 0 0 var(--gold); }
+.grp-t tr.q3 td.pos{ color:var(--gold); font-weight:800; }
 .grp-t tr.esp td.sel{ color:var(--lime); }
 
 /* ---------- tabla del cuadro de honor ---------- */
