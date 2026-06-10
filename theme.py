@@ -96,14 +96,21 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{ transform:translateY(-2px); }
 .stButton>button:active, .stFormSubmitButton>button:active{ transform:translateY(0); }
 
-/* ---------- pestañas ---------- */
-.stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid var(--line); }
+/* ---------- pestañas (estilo pastilla/segmento, bien separadas) ---------- */
+.stTabs [data-baseweb="tab-list"]{
+  gap:10px; flex-wrap:wrap; border-bottom:0; margin-bottom:.5rem; background:transparent;
+}
 .stTabs [data-baseweb="tab"]{
   font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase;
-  letter-spacing:.05em; font-size:1.05rem; color:var(--muted);
+  letter-spacing:.06em; font-size:1.02rem; color:var(--muted);
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:.45rem 1.05rem; height:auto; transition:color .14s ease, background .14s ease, border-color .14s ease;
 }
-.stTabs [aria-selected="true"]{ color:var(--text); }
-.stTabs [data-baseweb="tab-highlight"]{ background:var(--lime); height:3px; }
+.stTabs [data-baseweb="tab"]:hover{ color:var(--text); border-color:var(--lime-dim); background:var(--surface2); }
+.stTabs [data-baseweb="tab"][aria-selected="true"]{ background:var(--lime); border-color:var(--lime); }
+.stTabs [data-baseweb="tab"][aria-selected="true"], .stTabs [data-baseweb="tab"][aria-selected="true"] *{ color:#0a0e13 !important; }
+.stTabs [data-baseweb="tab-highlight"]{ background:transparent !important; height:0 !important; }
+.stTabs [data-baseweb="tab-border"]{ background:transparent !important; height:0 !important; }
 
 /* ---------- tablas / inputs ---------- */
 [data-testid="stDataFrame"], [data-testid="stTable"]{
