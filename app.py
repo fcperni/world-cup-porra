@@ -30,7 +30,7 @@ st.markdown(
     """
     <div class="hero">
       <div class="hero-kicker">Copa Mundial · 2026 · USA · México · Canadá</div>
-      <h1 class="hero-title">Pa porra<br><span class="acc">la mía</span></h1>
+      <h1 class="hero-title">Pa porra <span class="acc">la mía</span></h1>
       <div class="hero-sub">La porra de los 19. Puntuación al milímetro, calcada de la
       plantilla original: 1X2, diferencia, resultado exacto, posiciones, brackets y cuadro de honor.</div>
       <div class="hero-rule"></div>
@@ -83,22 +83,22 @@ else:
 
 # ----------------------------------------------------------------- navegación
 st.markdown('<div class="section-label">Explora la porra</div>', unsafe_allow_html=True)
-st.markdown(
-    """
-    <div class="navgrid">
-      <a class="navcard" href="Resultados" target="_self"><div class="ico">📝</div><div class="t">Resultados</div>
-        <div class="d">Marcadores actualizados automáticamente desde ESPN y Wikipedia.</div></a>
-      <a class="navcard" href="Calendario" target="_self"><div class="ico">📅</div><div class="t">Calendario</div>
-        <div class="d">Consulta de un vistazo todos los partidos y sus marcadores.</div></a>
-      <a class="navcard" href="Clasificación" target="_self"><div class="ico">🏆</div><div class="t">Clasificación</div>
-        <div class="d">Ranking de los 19 con desglose por categoría.</div></a>
-      <a class="navcard" href="Jugador" target="_self"><div class="ico">👤</div><div class="t">Jugador</div>
-        <div class="d">Predicciones, aciertos y puntos de cada participante.</div></a>
-      <a class="navcard" href="Grupos_y_Brackets" target="_self"><div class="ico">📊</div><div class="t">Grupos y Brackets</div>
-        <div class="d">Tablas de grupo y el cuadro de eliminatorias en vivo.</div></a>
-      <a class="navcard" href="Estadísticas" target="_self"><div class="ico">📈</div><div class="t">Estadísticas</div>
-        <div class="d">Favoritos, aciertos por selección y otros KPIs de la porra.</div></a>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+NAV = [
+    ("pages/1_Resultados.py", "📝 Resultados",
+     "Marcadores actualizados automáticamente desde ESPN y Wikipedia."),
+    ("pages/5_Calendario.py", "📅 Calendario",
+     "Todos los partidos y sus marcadores de un vistazo."),
+    ("pages/2_Clasificación.py", "🏆 Clasificación",
+     "Ranking de los 19 con desglose por categoría."),
+    ("pages/3_Jugador.py", "👤 Jugador",
+     "Predicciones, aciertos y puntos de cada participante."),
+    ("pages/4_Grupos_y_Brackets.py", "📊 Grupos y Brackets",
+     "Tablas de grupo y el cuadro de eliminatorias en vivo."),
+    ("pages/6_Estadísticas.py", "📈 Estadísticas",
+     "Favoritos, aciertos por selección y otros KPIs de la porra."),
+]
+nav_cols = st.columns(3)
+for i, (path, label, desc) in enumerate(NAV):
+    with nav_cols[i % 3]:
+        st.page_link(path, label=label, use_container_width=True)
+        st.caption(desc)

@@ -130,11 +130,11 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 }
 .hero-title{
   font-family:'Saira',sans-serif; font-weight:900; text-transform:uppercase;
-  font-size:clamp(3.2rem,9vw,6.2rem); line-height:.84; letter-spacing:.005em; margin:0;
+  font-size:clamp(2.6rem,6.4vw,4.8rem); line-height:1; letter-spacing:.005em; margin:0;
   color:var(--text); text-shadow:0 2px 0 rgba(0,0,0,.25);
 }
 .hero-title .acc{ color:var(--lime); -webkit-text-stroke:0; }
-.hero-sub{ color:var(--muted); margin-top:.7rem; font-size:1.02rem; max-width:46ch; }
+.hero-sub{ color:var(--muted); margin-top:.7rem; font-size:1.02rem; }
 .hero-rule{ height:3px; width:120px; background:linear-gradient(90deg,var(--lime),transparent); margin-top:1rem; border-radius:3px; }
 
 .board{ display:flex; flex-direction:column; gap:8px; margin-top:.3rem; }
@@ -173,20 +173,18 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .empty-card .big{ font-family:'Saira',sans-serif; text-transform:uppercase; font-size:1.6rem; font-weight:800; }
 .empty-card .sub{ color:var(--muted); margin-top:.3rem; }
 
-.navgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:.4rem; }
-.navcard, .navcard:hover, .navcard *{ text-decoration:none !important; }
-.navcard{
-  display:block; color:inherit;
+/* tarjetas de navegación (st.page_link, navegación client-side sin recarga) */
+[data-testid="stPageLink"] a{
   background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
-  border:1px solid var(--line); border-radius:14px; padding:1.1rem 1.2rem;
-  transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; box-shadow:var(--shadow);
+  border:1px solid var(--line); border-radius:13px; padding:.8rem 1rem !important;
+  box-shadow:var(--shadow);
+  transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.navcard:hover{ transform:translateY(-3px); border-color:rgba(194,242,60,.55);
+[data-testid="stPageLink"] a:hover{ transform:translateY(-3px); border-color:rgba(194,242,60,.55);
   box-shadow:0 16px 30px -16px rgba(194,242,60,.3); }
-.navcard:hover .t{ color:var(--lime); }
-.navcard .ico{ font-size:1.5rem; }
-.navcard .t{ font-family:'Saira',sans-serif; text-transform:uppercase; font-weight:700; font-size:1.25rem; margin-top:.3rem; }
-.navcard .d{ color:var(--muted); font-size:.9rem; margin-top:.2rem; line-height:1.35; }
+[data-testid="stPageLink"] a p{ font-weight:800 !important; text-transform:uppercase;
+  letter-spacing:.02em; font-size:1.12rem !important; }
+[data-testid="stPageLink"] a:hover p{ color:var(--lime) !important; }
 
 .section-label{
   font-family:'Saira',sans-serif; text-transform:uppercase; letter-spacing:.2em;
@@ -354,22 +352,29 @@ import json
 
 import streamlit.components.v1 as components
 
+_FONT_URL = "https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+
 
 def inject_theme() -> None:
-    """Inyecta el CSS en el ``<head>`` del documento padre con un id estable.
+    """Inyecta la fuente y el CSS en el ``<head>`` del documento padre, con ids
+    estables, para que persistan al navegar entre páginas y NO parpadeen.
 
-    Al vivir en el ``<head>`` (que Streamlit no reconstruye al navegar entre
-    páginas), el estilo persiste y NO parpadea, a diferencia de un ``st.markdown``
-    con ``<style>``, que se monta en el bloque principal y se recrea en cada rerun.
+    Un ``st.markdown('<style>')`` se monta en el bloque principal y se recrea en
+    cada rerun (de ahí el FOUC); aquí lo colocamos en el ``<head>``, que Streamlit
+    no reconstruye, e incluimos también el ``<link>`` de la fuente.
     """
     payload = json.dumps(_CSS)
+    font = json.dumps(_FONT_URL)
     components.html(
-        "<script>(function(){"
-        "var css=" + payload + ";"
-        "var doc=window.parent.document;"
-        "var tag=doc.getElementById('porra-theme');"
-        "if(!tag){tag=doc.createElement('style');tag.id='porra-theme';doc.head.appendChild(tag);}"
-        "if(tag.textContent!==css){tag.textContent=css;}"
+        "<script>(function(){var d=window.parent.document;"
+        "function lnk(id,rel,href,cross){if(!d.getElementById(id)){var l=d.createElement('link');"
+        "l.id=id;l.rel=rel;l.href=href;if(cross){l.crossOrigin='anonymous';}d.head.appendChild(l);}}"
+        "lnk('porra-pc1','preconnect','https://fonts.googleapis.com',false);"
+        "lnk('porra-pc2','preconnect','https://fonts.gstatic.com',true);"
+        "lnk('porra-font','stylesheet'," + font + ",false);"
+        "var css=" + payload + ";var t=d.getElementById('porra-theme');"
+        "if(!t){t=d.createElement('style');t.id='porra-theme';d.head.appendChild(t);}"
+        "if(t.textContent!==css){t.textContent=css;}"
         "})();</script>",
         height=0,
         width=0,
