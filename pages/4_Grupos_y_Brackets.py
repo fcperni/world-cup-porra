@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-import pandas as pd
 import streamlit as st
 
-from porra.flags import flag_img, flag_url
+from porra.flags import flag_img
 from porra.models import Phase
 from porra.tournament import compute_group_standings, resolved_match_teams
 from ui_common import configure_page, get_data, get_results
@@ -21,28 +20,29 @@ results = get_results()
 tab_grupos, tab_brackets = st.tabs(["Clasificación de grupos", "Eliminatorias"])
 
 with tab_grupos:
+    st.caption("Las dos primeras selecciones (en verde) avanzan a dieciseisavos.")
     standings = compute_group_standings(data, results)
-    cols = st.columns(3)
-    for i, (group, ranked) in enumerate(standings.items()):
-        with cols[i % 3]:
-            st.markdown(f"**Grupo {group}**")
-            df = pd.DataFrame([{
-                "Pos": pos,
-                "🏳": flag_url(r.team.name),
-                "Selección": r.team.name,
-                "Pts": r.points,
-                "J": r.played,
-                "GF": r.gf,
-                "GC": r.ga,
-                "DG": r.gd,
-            } for pos, r in enumerate(ranked, 1)])
-            st.dataframe(
-                df, hide_index=True, use_container_width=True,
-                column_config={
-                    "Pos": st.column_config.NumberColumn(width="small"),
-                    "🏳": st.column_config.ImageColumn("", width="small"),
-                },
+    cards = []
+    for group, ranked in standings.items():
+        body = []
+        for pos, r in enumerate(ranked, 1):
+            cls = "q" if pos <= 2 else ""
+            if r.team.name == "España":
+                cls = (cls + " esp").strip()
+            dg = f"+{r.gd}" if r.gd > 0 else str(r.gd)
+            body.append(
+                f'<tr class="{cls}"><td class="pos">{pos}</td>'
+                f'<td class="sel">{flag_img(r.team.name, 13)}<span class="nm">{r.team.name}</span></td>'
+                f'<td class="pts">{r.points}</td><td>{r.played}</td>'
+                f'<td>{r.gf}</td><td>{r.ga}</td><td>{dg}</td></tr>'
             )
+        cards.append(
+            f'<div class="grp"><div class="grp-h">Grupo {group}</div>'
+            '<table class="grp-t"><thead><tr><th></th><th class="sel">Selección</th>'
+            '<th>Pts</th><th>J</th><th>GF</th><th>GC</th><th>DG</th></tr></thead>'
+            '<tbody>' + "".join(body) + '</tbody></table></div>'
+        )
+    st.markdown('<div class="grp-grid">' + "".join(cards) + "</div>", unsafe_allow_html=True)
 
 with tab_brackets:
     st.caption(

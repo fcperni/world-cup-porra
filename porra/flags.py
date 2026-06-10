@@ -37,9 +37,14 @@ def flag_url(name: str | None, width: int = 40) -> str:
 
 
 def flag_img(name: str | None, height: int = 13) -> str:
-    """Etiqueta ``<img>`` de la bandera para incrustar en HTML."""
+    """Etiqueta ``<img>`` de la bandera para incrustar en HTML.
+
+    Fija ancho y alto (relación 4:3) para que TODAS las banderas ocupen el mismo
+    espacio; el recorte uniforme lo aplica ``object-fit: cover`` en el CSS.
+    """
     url = flag_url(name)
     if not url:
         return ""
-    return (f'<img class="fl-img" src="{url}" height="{height}" '
+    width = round(height * 4 / 3)
+    return (f'<img class="fl-img" src="{url}" width="{width}" height="{height}" '
             f'alt="{name}" loading="lazy">')

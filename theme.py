@@ -174,8 +174,9 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .empty-card .sub{ color:var(--muted); margin-top:.3rem; }
 
 .navgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:.4rem; }
+.navcard, .navcard:hover, .navcard *{ text-decoration:none !important; }
 .navcard{
-  display:block; text-decoration:none; color:inherit;
+  display:block; color:inherit;
   background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
   border:1px solid var(--line); border-radius:14px; padding:1.1rem 1.2rem;
   transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; box-shadow:var(--shadow);
@@ -213,7 +214,8 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
   font-size:1.2rem; letter-spacing:.01em; display:flex; align-items:center; gap:9px; min-width:0; }
 .fx-team.home{ justify-content:flex-end; text-align:right; }
 .fx-team .fl{ display:inline-flex; align-items:center; line-height:1; }
-.fl-img{ border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.12); vertical-align:middle; }
+.fl-img{ border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.12); vertical-align:middle;
+  object-fit:cover; display:inline-block; }
 .fx-team .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fx-team.ph .nm{ color:var(--muted); font-size:.92rem; font-family:'Saira',sans-serif; text-transform:none; }
 .fx-score{ font-family:'Saira',sans-serif; font-weight:600; text-align:center;
@@ -261,6 +263,29 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .fx-score, .bk-side .sc, .hero-kicker{
   font-variant-numeric:tabular-nums; font-feature-settings:'tnum' 1;
 }
+
+/* ---------- clasificación de grupos (tarjetas responsive) ---------- */
+.grp-grid{ display:grid; gap:14px;
+  grid-template-columns:repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.grp{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:13px; overflow:hidden; box-shadow:var(--shadow); }
+.grp-h{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; font-size:1.05rem;
+  padding:9px 14px; background:var(--ink2); border-bottom:1px solid var(--line); }
+.grp-t{ width:100%; border-collapse:collapse; }
+.grp-t th{ font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:700; padding:6px 6px; text-align:center; border-bottom:1px solid var(--line); }
+.grp-t th.sel{ text-align:left; padding-left:10px; }
+.grp-t td{ padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045);
+  font-variant-numeric:tabular-nums; font-size:.9rem; }
+.grp-t tr:last-child td{ border-bottom:0; }
+.grp-t td.pos{ color:var(--muted); width:22px; }
+.grp-t td.sel{ text-align:left; font-weight:600; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; max-width:140px; padding-left:10px; }
+.grp-t td.sel .fl-img{ vertical-align:middle; margin-right:7px; }
+.grp-t td.pts{ font-weight:800; color:var(--text); }
+.grp-t tr.q{ background:rgba(194,242,60,.07); box-shadow:inset 2px 0 0 var(--lime); }
+.grp-t tr.q td.pos{ color:var(--lime); font-weight:800; }
+.grp-t tr.esp td.sel{ color:var(--lime); }
 
 /* ---------- tabla del cuadro de honor ---------- */
 .honor{ width:100%; border-collapse:collapse; margin-top:.3rem;
