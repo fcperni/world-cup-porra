@@ -91,8 +91,9 @@ for m in matches:
         current_day = d
         html.append(f'<div class="fx-day">{fmt_day(d) if d else "Por determinar"}</div>')
     h, a, ph = names(m)
+    esp = " esp" if "España" in (h, a) else ""
     html.append(
-        '<div class="fx-row">'
+        f'<div class="fx-row{esp}">'
         f'<div class="fx-tag">{tag(m)}</div>'
         f'{team_html(h, "home", ph)}'
         f'{score_html(m)}'

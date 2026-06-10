@@ -1,11 +1,13 @@
 # Dependencias para Streamlit in Snowflake (canal Anaconda de Snowflake).
-# streamlit y snowflake-snowpark-python ya están disponibles en el entorno SiS.
-# NO incluye PyGithub (no está en el canal y no se usa en Snowflake: la
-# persistencia va a la tabla PORRA_RESULTS).
+# Incluye streamlit para que el archivo sirva también si Streamlit Community
+# Cloud lo usara en lugar de requirements.txt (Streamlit es la opción principal;
+# Snowflake, la alternativa). NO incluye PyGithub (no está en el canal y en
+# Snowflake la persistencia va a la tabla PORRA_RESULTS).
 name: app_environment
 channels:
   - snowflake
 dependencies:
+  - streamlit
   - pandas
   - openpyxl
   - requests

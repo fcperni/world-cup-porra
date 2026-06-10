@@ -5,10 +5,13 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from porra.flags import flag_img
 from porra.models import KO_ORDER, Phase
 from porra.scoring import score_match, score_player
 from porra.tournament import resolved_match_teams
 from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
+
+TEAM_HONOR = {"campeon", "subcampeon", "tercero"}  # categorías cuyo valor es una selección
 
 configure_page()
 st.title("👤 Detalle por jugador")
@@ -81,8 +84,18 @@ with tab_ko:
 with tab_honor:
     honor_filled = {k: v for k, v in player.honor.items() if v}
     if honor_filled:
-        st.table(pd.DataFrame([
-            {"Categoría": HONOR_LABELS.get(k, k), "Pronóstico": v}
-            for k, v in honor_filled.items()]))
+        rows = []
+        for k, v in honor_filled.items():
+            cat = HONOR_LABELS.get(k, k)
+            if k in TEAM_HONOR:  # selección: bandera + nombre oficial
+                val = f'{flag_img(v, 14)}<span class="nm">{v}</span>'
+            else:                # jugador: nombre en formato Proper
+                val = f'<span class="nm">{proper_name(v)}</span>'
+            rows.append(f'<tr><td class="cat">{cat}</td><td class="val">{val}</td></tr>')
+        st.markdown(
+            '<table class="honor"><thead><tr><th>Categoría</th><th>Pronóstico</th></tr></thead>'
+            '<tbody>' + "".join(rows) + "</tbody></table>",
+            unsafe_allow_html=True,
+        )
     else:
         st.caption("Sin pronósticos de cuadro de honor.")

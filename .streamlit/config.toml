@@ -5,11 +5,13 @@ backgroundColor = "#0a0e13"
 secondaryBackgroundColor = "#141c25"
 textColor = "#eaf1f3"
 
-# Fuentes cargadas de forma NATIVA por el tema (Google Fonts, formato "familia:url").
-# Al ser parte del tema persistente evitan el parpadeo (FOUC) al cambiar de página.
-font = "'Hanken Grotesk':https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
-headingFont = "'Big Shoulders Display':https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800;900&display=swap"
-codeFont = "'Spline Sans Mono':https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"
+# Fuente ÚNICA de toda la UI: Saira (familia técnica/deportiva con pesos 400-900
+# y figuras tabulares). Cargada de forma nativa por el tema (evita el parpadeo).
+# La jerarquía se logra con el peso, las mayúsculas y el interletraje; las cifras
+# usan font-variant-numeric: tabular-nums (ver theme.py).
+font = "'Saira':https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+headingFont = "'Saira':https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+codeFont = "'Saira':https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
 
 [browser]
 gatherUsageStats = false
