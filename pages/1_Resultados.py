@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from porra.flags import with_flag
 from porra.models import KO_ORDER, Phase
 from porra.results_store import HONOR_KEYS
 from porra.sources.base import sync_results
@@ -40,7 +41,8 @@ with st.expander("🔄 Sincronizar resultados (ESPN → Wikipedia)", expanded=Fa
             current = results.goals(num)
             new = (mr.home_goals, mr.away_goals)
             if current != new:
-                changes.append({"Nº": num, "Partido": f"{m.home} - {m.away}" if m else str(num),
+                changes.append({"Nº": num,
+                                "Partido": f"{with_flag(m.home)} - {with_flag(m.away)}" if m else str(num),
                                 "Actual": f"{current[0]}-{current[1]}" if current else "—",
                                 "Propuesto": f"{new[0]}-{new[1]}"})
         if not changes:
@@ -69,8 +71,10 @@ with tab_grupos:
     rows = []
     for m in gm:
         g = results.goals(m.number)
-        rows.append({"Nº": m.number, "Grupo": m.group, "Jor.": m.matchday, "Local": m.home,
-                     "GL": g[0] if g else None, "GV": g[1] if g else None, "Visitante": m.away,
+        rows.append({"Nº": m.number, "Grupo": m.group, "Jor.": m.matchday,
+                     "Local": with_flag(m.home),
+                     "GL": g[0] if g else None, "GV": g[1] if g else None,
+                     "Visitante": with_flag(m.away),
                      "Bonus": f"x{m.bonus}" if m.bonus > 1 else ""})
     edited = st.data_editor(
         pd.DataFrame(rows), hide_index=True, use_container_width=True,
@@ -116,9 +120,9 @@ with tab_ko:
             g = results.goals(m.number)
             side = results.ko_winners.get(m.number, "")
             pasa = ht.name if side == "home" else at.name if side == "away" else ""
-            rows.append({"Nº": m.number, "Local": ht.name,
+            rows.append({"Nº": m.number, "Local": with_flag(ht.name),
                          "GL": g[0] if g else None, "GV": g[1] if g else None,
-                         "Visitante": at.name, "Pasa": pasa})
+                         "Visitante": with_flag(at.name), "Pasa": pasa})
         names_by_num = {m.number: (teams[m.number][0].name, teams[m.number][1].name) for m in resolved}
         edited = st.data_editor(
             pd.DataFrame(rows), hide_index=True, use_container_width=True,
@@ -167,7 +171,8 @@ with tab_honor:
         for key, col in zip(["campeon", "subcampeon", "tercero"], [c1, c2, c3]):
             current = results.honor.get(key) or ""
             idx = team_names.index(current) if current in team_names else 0
-            new_honor[key] = col.selectbox(HONOR_LABELS[key], team_names, index=idx)
+            new_honor[key] = col.selectbox(HONOR_LABELS[key], team_names, index=idx,
+                                           format_func=with_flag)
         st.markdown("**Botas y balones** — escribe el nombre del jugador")
         cols = st.columns(3)
         manual = [k for k in HONOR_KEYS if k not in ("campeon", "subcampeon", "tercero")]

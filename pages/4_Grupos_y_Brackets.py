@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from porra.flags import with_flag
 from porra.models import KO_ORDER
 from porra.tournament import compute_group_standings, resolved_match_teams
 from ui_common import PHASE_LABELS, configure_page, get_data, get_results
@@ -25,7 +26,7 @@ with tab_grupos:
             st.markdown(f"**Grupo {group}**")
             df = pd.DataFrame([{
                 "": pos,
-                "Selección": r.team.name,
+                "Selección": with_flag(r.team.name),
                 "Pts": r.points,
                 "J": r.played,
                 "GF": r.gf,

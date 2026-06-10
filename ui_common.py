@@ -16,7 +16,9 @@ from porra.results_store import DEFAULT_RESULTS, Results, load_results, save_res
 import json
 
 APP_TITLE = "Pa porra la mía"
-APP_ICON = "⚽"
+# No existe un emoji fiel a la porra del as de bastos (la maza nudosa de la baraja
+# española), así que usamos la berenjena como pidió el usuario.
+APP_ICON = "🍆"
 
 PHASE_LABELS = {
     Phase.GROUPS: "Fase de grupos",
