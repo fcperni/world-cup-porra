@@ -190,6 +190,36 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 }
 .section-label::after{ content:''; flex:1; height:1px; background:var(--line); }
 
+/* ---------- lista de partidos (Calendario) ---------- */
+.fx{ display:flex; flex-direction:column; gap:7px; }
+.fx-day{
+  font-family:'Spline Sans Mono',monospace; text-transform:uppercase; letter-spacing:.18em;
+  font-size:.72rem; color:var(--lime); margin:1.3rem 0 .35rem;
+}
+.fx-row{
+  display:grid; grid-template-columns:96px 1fr 78px 1fr; align-items:center; gap:12px;
+  background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:11px; padding:9px 15px;
+}
+.fx-tag{ font-family:'Spline Sans Mono',monospace; font-size:.66rem; letter-spacing:.05em;
+  color:var(--muted); text-transform:uppercase; }
+.fx-team{ font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase;
+  font-size:1.2rem; letter-spacing:.01em; display:flex; align-items:center; gap:9px; min-width:0; }
+.fx-team.home{ justify-content:flex-end; text-align:right; }
+.fx-team .fl{ font-size:1.3rem; line-height:1; }
+.fx-team .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fx-team.ph .nm{ color:var(--muted); font-size:.92rem; font-family:'Spline Sans Mono',monospace; text-transform:none; }
+.fx-score{ font-family:'Spline Sans Mono',monospace; font-weight:600; text-align:center;
+  border-radius:8px; padding:5px 0; font-size:1.02rem; }
+.fx-score.played{ background:var(--lime); color:#0a0e13; }
+.fx-score.pending{ color:var(--muted); border:1px solid var(--line); font-size:.78rem; padding:4px 0; }
+.fx-score .pen{ display:block; font-size:.58rem; letter-spacing:.04em; }
+@media (max-width:640px){
+  .fx-row{ grid-template-columns:1fr 58px 1fr; gap:8px; padding:8px 11px; }
+  .fx-tag{ display:none; }
+  .fx-team{ font-size:1rem; } .fx-team .fl{ font-size:1.05rem; }
+}
+
 /* ---------- móvil ---------- */
 @media (max-width:820px){
   /* las columnas de Streamlit se apilan a ancho completo (legible en móvil) */
