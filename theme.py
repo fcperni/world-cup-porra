@@ -79,15 +79,22 @@ html, body, .stApp, [data-testid="stAppViewContainer"]{
 
 /* ---------- botones ---------- */
 .stButton>button, .stFormSubmitButton>button, .stDownloadButton>button{
-  background:var(--lime); color:#0a0e13; border:0; border-radius:11px;
-  font-family:'Big Shoulders Display',sans-serif; font-weight:700;
-  text-transform:uppercase; letter-spacing:.05em; font-size:1.02rem; padding:.5rem 1.1rem;
-  transition:transform .14s ease, box-shadow .14s ease, filter .14s ease;
+  border-radius:11px; font-family:'Big Shoulders Display',sans-serif; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em; font-size:1.05rem; padding:.55rem 1.2rem;
+  min-height:44px;  /* objetivo táctil cómodo en móvil */
+  transition:transform .14s ease, box-shadow .14s ease, filter .14s ease, border-color .14s ease;
 }
-.stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{
-  transform:translateY(-2px); box-shadow:0 12px 26px -10px rgba(194,242,60,.55); filter:brightness(1.04);
-}
-.stButton>button:active{ transform:translateY(0); }
+/* primario: lima con texto tinta (alto contraste) */
+button[kind*="primary"], button[data-testid*="primary"]{ background:var(--lime) !important; border:0 !important; }
+button[kind*="primary"] *, button[data-testid*="primary"] *{ color:#0a0e13 !important; }
+button[kind*="primary"]:hover, button[data-testid*="primary"]:hover{ box-shadow:0 12px 26px -10px rgba(194,242,60,.55); filter:brightness(1.05); }
+/* secundario: fantasma oscuro con texto claro (legible) */
+button[kind*="secondary"], button[data-testid*="secondary"]{ background:var(--surface) !important; border:1px solid var(--line) !important; }
+button[kind*="secondary"] *, button[data-testid*="secondary"] *{ color:var(--text) !important; }
+button[kind*="secondary"]:hover, button[data-testid*="secondary"]:hover{ border-color:var(--lime) !important; background:var(--surface2) !important; }
+button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ color:var(--lime) !important; }
+.stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{ transform:translateY(-2px); }
+.stButton>button:active, .stFormSubmitButton>button:active{ transform:translateY(0); }
 
 /* ---------- pestañas ---------- */
 .stTabs [data-baseweb="tab-list"]{ gap:6px; border-bottom:1px solid var(--line); }
@@ -175,6 +182,31 @@ html, body, .stApp, [data-testid="stAppViewContainer"]{
   font-size:.75rem; color:var(--muted); margin:1.6rem 0 .6rem; display:flex; align-items:center; gap:10px;
 }
 .section-label::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+/* ---------- móvil ---------- */
+@media (max-width:820px){
+  /* las columnas de Streamlit se apilan a ancho completo (legible en móvil) */
+  [data-testid="stHorizontalBlock"]{ flex-wrap:wrap; gap:.55rem; }
+  [data-testid="stColumn"]{ flex:1 1 100% !important; min-width:100% !important; }
+}
+@media (max-width:640px){
+  .block-container{ padding:1.3rem .9rem 3rem; }
+  .stApp h1{ font-size:2rem; }
+  .hero{ padding-bottom:1rem; }
+  .hero-title{ font-size:clamp(2.7rem,16vw,3.6rem); }
+  .hero-kicker{ font-size:.68rem; letter-spacing:.16em; }
+  .hero-sub{ font-size:.95rem; }
+  .board-row{ grid-template-columns:30px 1fr 78px; gap:10px; padding:11px 13px; }
+  .board-row .who{ font-size:1.18rem; }
+  .board-row .pts{ font-size:1.05rem; }
+  .board-row .pts small{ display:block; margin:0; line-height:1; }
+  .navgrid{ grid-template-columns:1fr; }
+  [data-testid="stMetric"]{ padding:13px 14px 11px; }
+  [data-testid="stMetricValue"]{ font-size:1.5rem; }
+  .stTabs [data-baseweb="tab"]{ font-size:.95rem; letter-spacing:.03em; }
+  /* tablas: permitir scroll horizontal sin romper el layout */
+  [data-testid="stDataFrame"]{ overflow-x:auto; }
+}
 """
 
 
