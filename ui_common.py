@@ -28,6 +28,13 @@ PHASE_LABELS = {
     Phase.FINAL: "Final",
 }
 
+# Etiquetas legibles del cuadro de honor (clave interna -> texto a mostrar).
+HONOR_LABELS = {
+    "campeon": "Campeón", "subcampeon": "Subcampeón", "tercero": "3er puesto",
+    "bota_oro": "Bota de Oro", "bota_plata": "Bota de Plata", "bota_bronce": "Bota de Bronce",
+    "balon_oro": "Balón de Oro", "balon_plata": "Balón de Plata", "balon_bronce": "Balón de Bronce",
+}
+
 
 @st.cache_data(show_spinner="Leyendo ADMIN.xlsx…")
 def get_data() -> TournamentData:
@@ -75,3 +82,11 @@ def configure_page() -> None:
 def fmt(value: float) -> str:
     """Formatea puntos: entero si no tiene decimales, si no con un decimal."""
     return str(int(value)) if float(value).is_integer() else f"{value:.1f}"
+
+
+def proper_name(name: str) -> str:
+    """Nombre de jugador en formato Proper para mostrar (PACO -> Paco).
+
+    Solo afecta a la presentación; los datos internos conservan el original.
+    """
+    return str(name).title()

@@ -8,7 +8,7 @@ import streamlit as st
 from porra.models import KO_ORDER, Phase
 from porra.scoring import score_match, score_player
 from porra.tournament import resolved_match_teams
-from ui_common import PHASE_LABELS, configure_page, fmt, get_data, get_results
+from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
 
 configure_page()
 st.title("👤 Detalle por jugador")
@@ -16,7 +16,11 @@ st.title("👤 Detalle por jugador")
 data = get_data()
 results = get_results()
 
-selected = st.selectbox("Jugador", [p.name for p in data.players])
+player_names = sorted((p.name for p in data.players), key=lambda n: proper_name(n).lower())
+selected = st.selectbox(
+    "Jugador", player_names, format_func=proper_name,
+    placeholder="Escribe para buscar…",
+)
 player = next(p for p in data.players if p.name == selected)
 
 score = score_player(data, results, player)
@@ -76,6 +80,7 @@ with tab_ko:
 with tab_honor:
     honor_filled = {k: v for k, v in player.honor.items() if v}
     if honor_filled:
-        st.table(pd.DataFrame([{"Categoría": k, "Pronóstico": v} for k, v in honor_filled.items()]))
+        st.table(pd.DataFrame([{"Categoría": HONOR_LABELS.get(k, k), "Pronóstico": v}
+                               for k, v in honor_filled.items()]))
     else:
         st.caption("Sin pronósticos de cuadro de honor.")

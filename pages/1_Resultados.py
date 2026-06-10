@@ -11,7 +11,7 @@ from porra.sources.base import sync_results
 from porra.sources.espn import ESPNSource
 from porra.sources.wikipedia import WikipediaSource
 from porra.tournament import resolved_match_teams
-from ui_common import PHASE_LABELS, configure_page, get_data, get_results, persist
+from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, get_data, get_results, persist
 
 configure_page()
 st.title("📝 Resultados")
@@ -56,12 +56,6 @@ with st.expander("🔄 Sincronizar resultados (ESPN → Wikipedia)", expanded=Fa
                 del st.session_state.proposals
                 st.success(f"{len(changes)} resultados aplicados.")
                 st.rerun()
-
-HONOR_LABELS = {
-    "campeon": "Campeón", "subcampeon": "Subcampeón", "tercero": "3er puesto",
-    "bota_oro": "Bota de Oro", "bota_plata": "Bota de Plata", "bota_bronce": "Bota de Bronce",
-    "balon_oro": "Balón de Oro", "balon_plata": "Balón de Plata", "balon_bronce": "Balón de Bronce",
-}
 
 tab_grupos, tab_ko, tab_honor = st.tabs(["Fase de grupos", "Eliminatorias", "Cuadro de honor"])
 

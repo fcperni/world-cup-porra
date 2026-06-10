@@ -14,7 +14,7 @@ import streamlit as st
 from porra.models import Phase
 from porra.scoring import scoreboard
 from porra.tournament import group_phase_complete
-from ui_common import APP_ICON, APP_TITLE, configure_page, fmt, get_data, get_results
+from ui_common import APP_ICON, APP_TITLE, configure_page, fmt, get_data, get_results, proper_name
 
 configure_page()
 
@@ -40,7 +40,7 @@ sb = scoreboard(data, results)
 if sb and sb[0].total > 0:
     st.subheader("🏆 Líder actual")
     leader = sb[0]
-    st.metric(leader.name, f"{fmt(leader.total)} pts")
+    st.metric(proper_name(leader.name), f"{fmt(leader.total)} pts")
 else:
     st.info(
         "Aún no hay resultados. Ve a **📝 Resultados** para empezar a introducir "

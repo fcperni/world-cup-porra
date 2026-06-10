@@ -8,6 +8,26 @@ App **Streamlit** ("Pa porra la mía") para la porra del Mundial 2026 de 19 part
 
 **Decisión central:** `openpyxl` no recalcula fórmulas de Excel (solo lee el valor cacheado, hoy todo a 0). Por eso el motor de puntuación y la lógica del torneo viven en `porra/`, no en el Excel.
 
+## Flujo de trabajo (git) — OBLIGATORIO
+
+**Haz commit y push de _cada_ cambio** en cuanto esté terminado y verificado (no
+acumules cambios sin subir). Tras editar, ejecuta los tests relevantes, commitea
+con un mensaje descriptivo y haz `git push origin main`.
+
+Gotcha de credenciales: el entorno suele exponer un `GITHUB_TOKEN` (un PAT
+fine-grained) **sin acceso** a `world-cup-porra`, y `gh` lo prioriza sobre la
+credencial de keyring (OAuth con scope `repo`, que sí tiene push). Si el push da
+`403 Write access not granted`, haz el push sin esa variable:
+
+```bash
+env -u GITHUB_TOKEN git push origin main          # bash
+```
+```powershell
+$env:GITHUB_TOKEN=$null; git push origin main      # PowerShell
+```
+
+Termina los mensajes de commit con la línea `Co-Authored-By: Claude …`.
+
 ## Comandos
 
 ```bash

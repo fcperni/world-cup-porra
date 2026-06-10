@@ -7,7 +7,7 @@ from streamlit.testing.v1 import AppTest
 PAGES = [
     "app.py",
     "pages/1_Resultados.py",
-    "pages/2_Clasificacion.py",
+    "pages/2_Clasificación.py",
     "pages/3_Jugador.py",
     "pages/4_Grupos_y_Brackets.py",
 ]

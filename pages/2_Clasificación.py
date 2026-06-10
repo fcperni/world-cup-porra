@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from porra.scoring import CATEGORIES, scoreboard
-from ui_common import configure_page, get_data, get_results
+from ui_common import configure_page, get_data, get_results, proper_name
 
 configure_page()
 st.title("🏆 Clasificación")
@@ -22,7 +22,7 @@ if all(s.total == 0 for s in sb):
 # Tabla principal: posición, jugador, total
 main = pd.DataFrame({
     "Pos": range(1, len(sb) + 1),
-    "Jugador": [s.name for s in sb],
+    "Jugador": [proper_name(s.name) for s in sb],
     "Puntos": [round(s.total, 1) for s in sb],
 })
 st.subheader("Ranking")
@@ -40,7 +40,7 @@ if not active:
     st.caption("Sin categorías con puntos todavía.")
 else:
     detail = pd.DataFrame(
-        [{"Jugador": s.name, **{c: round(s.categories[c], 1) for c in active},
+        [{"Jugador": proper_name(s.name), **{c: round(s.categories[c], 1) for c in active},
           "Total": round(s.total, 1)} for s in sb]
     )
     st.dataframe(
