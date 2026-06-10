@@ -3,8 +3,13 @@
 App web (Streamlit) para gestionar y analizar la **porra del Mundial 2026** de 19
 participantes. Lee las predicciones desde `docs/ADMIN.xlsx`, reproduce **con
 fidelidad 100%** el sistema de puntuación de la plantilla Excel en Python, y
-permite introducir los resultados de los partidos manualmente o por **scraping**
-(ESPN como fuente principal, Wikipedia de reserva).
+actualiza los resultados de los partidos **automáticamente por scraping** (ESPN
+como fuente principal, Wikipedia de reserva) — sin entrada ni sincronización manual.
+
+Funciona tal cual en **dos entornos** sin tocar el código: Streamlit Community
+Cloud / local (persistencia en `data/results.json` + commit opcional a GitHub) y
+**Streamlit in Snowflake** (persistencia en la tabla `PORRA_RESULTS`). La app
+detecta sola dónde corre.
 
 ## Por qué Python y no Excel
 
@@ -61,3 +66,23 @@ pytest                      # ejecutar los tests
    resultados persisten entre reinicios (el disco de Cloud es efímero).
 
 Sin secrets, la app funciona igual pero solo guarda en disco local.
+
+> Nota: el repo incluye `requirements.txt` (pip, para Cloud/local) y
+> `environment.yml` (conda, para Snowflake). Streamlit Community Cloud usa **un
+> solo** archivo de dependencias; si alguna vez fallara por elegir
+> `environment.yml`, basta con añadirle `streamlit` o priorizar `requirements.txt`.
+
+## Despliegue en Streamlit in Snowflake
+
+La app corre nativamente en Snowflake (persistencia en tabla, sin GitHub). Pasos:
+
+1. Ejecuta `deploy/snowflake_setup.sql` en una hoja de Snowsight con un rol admin.
+   Crea warehouse, base/esquema, la tabla `PORRA_RESULTS`, la **integración Git**
+   con este repo, una **External Access Integration** para el scraping (ESPN +
+   Wikipedia) y el objeto `STREAMLIT`.
+2. Abre la app en **Snowsight → Projects → Streamlit → "Pa porra la mía"**.
+3. Tras cada `git push`, ejecuta `ALTER GIT REPOSITORY … FETCH;` para actualizarla.
+
+Dependencias en Snowflake: `environment.yml` (canal Anaconda de Snowflake; sin
+PyGithub). Si omites la integración de red, la app arranca igual pero no podrá
+scrapear (la entrada es solo automática, así que conviene configurarla).
