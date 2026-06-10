@@ -175,11 +175,14 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 
 .navgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:.4rem; }
 .navcard{
+  display:block; text-decoration:none; color:inherit;
   background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
   border:1px solid var(--line); border-radius:14px; padding:1.1rem 1.2rem;
-  transition:transform .15s ease, border-color .15s ease; box-shadow:var(--shadow);
+  transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; box-shadow:var(--shadow);
 }
-.navcard:hover{ transform:translateY(-3px); border-color:rgba(194,242,60,.45); }
+.navcard:hover{ transform:translateY(-3px); border-color:rgba(194,242,60,.55);
+  box-shadow:0 16px 30px -16px rgba(194,242,60,.3); }
+.navcard:hover .t{ color:var(--lime); }
 .navcard .ico{ font-size:1.5rem; }
 .navcard .t{ font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase; font-weight:700; font-size:1.25rem; margin-top:.3rem; }
 .navcard .d{ color:var(--muted); font-size:.9rem; margin-top:.2rem; line-height:1.35; }

@@ -1,15 +1,16 @@
-"""Resultados — sincronización automática desde ESPN (Wikipedia de reserva).
+"""Resultados — se actualizan AUTOMÁTICAMENTE desde ESPN (Wikipedia de reserva).
 
-Los marcadores NO se editan a mano: se obtienen scrapeando las webs indicadas.
-El ganador en eliminatorias con empate se toma del propio dato de la fuente.
+No hay entrada ni sincronización manual: al abrir esta página se consultan las
+fuentes (con caché para no saturarlas) y se incorporan los marcadores de los
+partidos ya disputados. El ganador en eliminatorias con empate se toma del dato
+de la fuente.
 """
 
 from __future__ import annotations
 
-import pandas as pd
 import streamlit as st
 
-from porra.sources.base import sync_results
+from porra.sources.base import map_to_matches
 from porra.sources.espn import ESPNSource
 from porra.sources.wikipedia import WikipediaSource
 from porra.tournament import resolved_match_teams
@@ -18,8 +19,44 @@ from ui_common import configure_page, get_data, get_results, persist
 configure_page()
 st.title("📝 Resultados")
 
+
+@st.cache_data(ttl=900, show_spinner="Actualizando resultados desde ESPN y Wikipedia…")
+def _fetch_games():
+    """Descarga (cacheada 15 min) los partidos publicados por las fuentes."""
+    data = get_data()
+    games = []
+    for source in (ESPNSource(), WikipediaSource()):
+        try:
+            games.extend(source.fetch(data))
+        except Exception:  # noqa: BLE001 — una fuente caída no debe romper la página
+            continue
+    return games
+
+
+def _auto_update(data, results) -> int:
+    """Incorpora los resultados nuevos de las fuentes. Devuelve cuántos aplicó."""
+    games = _fetch_games()
+    applied = 0
+    for _ in range(6):  # varias pasadas: al cerrar una ronda se resuelve la siguiente
+        teams = resolved_match_teams(data, results)
+        proposals = map_to_matches(data, results, games, teams)
+        nuevos = {n: mr for n, mr in proposals.items()
+                  if results.goals(n) != (mr.home_goals, mr.away_goals)}
+        if not nuevos:
+            break
+        for n, mr in nuevos.items():
+            results.set_match(n, mr.home_goals, mr.away_goals)
+            if mr.winner and mr.home_goals == mr.away_goals:
+                results.ko_winners[n] = mr.winner
+            applied += 1
+    if applied:
+        persist(results)
+    return applied
+
+
 data = get_data()
 results = get_results()
+nuevos = _auto_update(data, results)
 
 played = sum(1 for m in data.matches if results.has(m.number))
 c1, c2 = st.columns(2)
@@ -27,43 +64,18 @@ c1.metric("Partidos con resultado", f"{played}/104")
 c2.metric("Pendientes", 104 - played)
 
 st.caption(
-    "Los resultados se obtienen **automáticamente** de ESPN (y Wikipedia como "
-    "reserva); no se editan a mano. Pulsa **Sincronizar** para traer los marcadores "
-    "de los partidos ya disputados. Revisa los cambios antes de aplicarlos."
+    "Los resultados se actualizan **automáticamente** desde ESPN (y Wikipedia como "
+    "reserva) cada vez que abres esta página. No hay que introducir ni sincronizar "
+    "nada a mano."
 )
 
-if st.button("🔄 Sincronizar resultados", type="primary"):
-    with st.spinner("Consultando ESPN y Wikipedia…"):
-        teams_now = resolved_match_teams(data, results)
-        st.session_state.proposals = sync_results(
-            data, results, [ESPNSource(), WikipediaSource()], teams_now)
-
-proposals = st.session_state.get("proposals")
-if proposals is not None:
-    changes = []
-    for num, mr in sorted(proposals.items()):
-        m = data.match_by_number(num)
-        current = results.goals(num)
-        new = (mr.home_goals, mr.away_goals)
-        if current != new:
-            changes.append({
-                "Nº": num,
-                "Partido": f"{m.home} - {m.away}" if m else str(num),
-                "Actual": f"{current[0]}-{current[1]}" if current else "—",
-                "Nuevo": f"{new[0]}-{new[1]}",
-            })
-    if not changes:
-        st.success("Todo al día: la fuente no trae resultados nuevos.")
-    else:
-        st.dataframe(pd.DataFrame(changes), hide_index=True, use_container_width=True)
-        if st.button(f"✅ Aplicar {len(changes)} cambios", type="primary"):
-            for num, mr in proposals.items():
-                results.set_match(num, mr.home_goals, mr.away_goals)
-                if mr.winner and mr.home_goals == mr.away_goals:
-                    results.ko_winners[num] = mr.winner
-            persist(results)
-            del st.session_state.proposals
-            st.success(f"{len(changes)} resultados aplicados.")
-            st.rerun()
+if nuevos:
+    st.success(f"Se han incorporado {nuevos} resultado(s) nuevo(s).")
+elif played:
+    st.info("Todo al día: no hay resultados nuevos desde la última consulta.", icon="✅")
 else:
-    st.info("Pulsa **Sincronizar resultados** para empezar.", icon="🔄")
+    st.info("Aún no hay partidos disputados. Esta página los recogerá en cuanto se jueguen.",
+            icon="🗓️")
+
+st.caption("Consulta el detalle de todos los partidos en **Calendario** y la tabla en "
+           "**Clasificación**.")

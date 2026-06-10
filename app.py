@@ -85,16 +85,16 @@ st.markdown('<div class="section-label">Explora la porra</div>', unsafe_allow_ht
 st.markdown(
     """
     <div class="navgrid">
-      <div class="navcard"><div class="ico">📝</div><div class="t">Resultados</div>
-        <div class="d">Introduce goles, sincroniza con ESPN y fija el cuadro de honor.</div></div>
-      <div class="navcard"><div class="ico">📅</div><div class="t">Calendario</div>
-        <div class="d">Consulta de un vistazo todos los partidos y sus marcadores.</div></div>
-      <div class="navcard"><div class="ico">🏆</div><div class="t">Clasificación</div>
-        <div class="d">Ranking de los 19 con desglose por categoría.</div></div>
-      <div class="navcard"><div class="ico">👤</div><div class="t">Jugador</div>
-        <div class="d">Predicciones, aciertos y puntos de cada participante.</div></div>
-      <div class="navcard"><div class="ico">📊</div><div class="t">Grupos y Brackets</div>
-        <div class="d">Tablas de grupo y el cuadro de eliminatorias en vivo.</div></div>
+      <a class="navcard" href="Resultados" target="_self"><div class="ico">📝</div><div class="t">Resultados</div>
+        <div class="d">Marcadores actualizados automáticamente desde ESPN y Wikipedia.</div></a>
+      <a class="navcard" href="Calendario" target="_self"><div class="ico">📅</div><div class="t">Calendario</div>
+        <div class="d">Consulta de un vistazo todos los partidos y sus marcadores.</div></a>
+      <a class="navcard" href="Clasificación" target="_self"><div class="ico">🏆</div><div class="t">Clasificación</div>
+        <div class="d">Ranking de los 19 con desglose por categoría.</div></a>
+      <a class="navcard" href="Jugador" target="_self"><div class="ico">👤</div><div class="t">Jugador</div>
+        <div class="d">Predicciones, aciertos y puntos de cada participante.</div></a>
+      <a class="navcard" href="Grupos_y_Brackets" target="_self"><div class="ico">📊</div><div class="t">Grupos y Brackets</div>
+        <div class="d">Tablas de grupo y el cuadro de eliminatorias en vivo.</div></a>
     </div>
     """,
     unsafe_allow_html=True,

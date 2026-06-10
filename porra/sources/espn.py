@@ -28,9 +28,12 @@ class ESPNSource(ResultsSource):
         days = {m.date.date() for m in data.matches if m.date}
         if not days:
             return []
-        # cubrir todo el rango por si alguna fecha cae en día distinto por zona horaria
-        lo, hi = min(days), max(days)
-        return [lo + timedelta(days=i) for i in range((hi - lo).days + 2)]
+        # cubrir el rango (con un día de margen por zona horaria) pero solo hasta hoy:
+        # los partidos futuros aún no tienen resultado, así que no merece la pena pedirlos.
+        lo, hi = min(days), min(max(days), date.today() + timedelta(days=1))
+        if hi < lo:
+            return []
+        return [lo + timedelta(days=i) for i in range((hi - lo).days + 1)]
 
     def _fetch_day(self, day: date) -> list[ScrapedGame]:
         url = ESPN_URL.format(league=self.league)
