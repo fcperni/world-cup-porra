@@ -2,39 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Qué es este repositorio
+## Qué es
 
-No es un proyecto de software: no hay código fuente, ni build, ni tests, ni linters. Es una **porra/quiniela del Mundial de fútbol** gestionada íntegramente con libros de Excel (`.xlsx`) almacenados en `docs/`. La plantilla original es obra de Miguel Ángel Tejero (`matejero`), está en español y los libros están protegidos por contraseña (las contraseñas no se facilitan) y no contienen macros.
+App **Streamlit** ("Pa porra la mía") para la porra del Mundial 2026 de 19 participantes. Lee `docs/ADMIN.xlsx` como **fuente de solo lectura** (predicciones, reglas, calendario, equipos, tabla de mejores terceros) y **reimplementa en Python** todo el cálculo. Permite introducir resultados manualmente o por scraping (ESPN principal, Wikipedia backup). Desplegada en Streamlit Cloud desde `github.com/fcperni/world-cup-porra`.
 
-No esperes comandos de compilación/test. El "trabajo" aquí es inspeccionar, comparar o explicar datos de las hojas de cálculo.
+**Decisión central:** `openpyxl` no recalcula fórmulas de Excel (solo lee el valor cacheado, hoy todo a 0). Por eso el motor de puntuación y la lógica del torneo viven en `porra/`, no en el Excel.
 
-## Estructura de `docs/`
-
-- `ADMIN.xlsx` — libro **maestro/agregador**. Recoge las predicciones de todos los participantes y calcula la clasificación general, estadísticas y gráficos.
-- Un libro **por participante**, con su nombre como nombre de archivo: `ALFON`, `ANGEL`, `ARTURO`, `BELLO`, `BONERA`, `CASAS`, `CHISCO`, `FLORES`, `GAGO`, `GARZON`, `LASA`, `MAICKY`, `OBLI`, `OSCAR`, `PACO`, `PANDO`, `PIRI`, `RONIE`, `VICTOR`.
-
-### Hojas de un libro de participante
-`Home`, `WORLDCUP`, `Pool` (donde el participante introduce sus predicciones), `Fixture`, `Credits` y hojas auxiliares ocultas (`Idiomas`, `Combinaciones`, `Equipos`, `Horarios`).
-
-### Hojas adicionales del libro `ADMIN`
-Sustituye `Pool` por la maquinaria de agregación: `ADMIN`, `CLAS` (clasificación general), `DailyPrediction`, `DailyClas`, `Stats`, más hojas ocultas (`Graf`, `Combinaciones3`). Incluye gráficos (`xl/charts/`).
-
-## Reglas de edición (heredadas de la plantilla)
-
-Solo deben editarse las **celdas de entrada** designadas: los resultados de los partidos y los nombres de los equipos. Las fórmulas, la protección y la estructura de las hojas no deben modificarse — romperlas invalida los cálculos del libro `ADMIN`. Los nombres de los equipos y resultados se propagan a la clasificación mediante fórmulas y rangos con nombre (p. ej. `Ganador`, `FGLocal`, `FGVisitante`, `Part1Empate1L`...).
-
-## Inspeccionar el contenido de un `.xlsx`
-
-Un `.xlsx` es un ZIP de XML. Para leer su contenido sin abrir Excel:
+## Comandos
 
 ```bash
-unzip -o docs/ADMIN.xlsx -d /tmp/admin
-# Nombres de hojas:
-grep -o '<sheet [^/]*/>' /tmp/admin/xl/workbook.xml
-# Textos/etiquetas (cadenas compartidas):
-cat /tmp/admin/xl/sharedStrings.xml
-# Celdas de una hoja concreta:
-cat /tmp/admin/xl/worksheets/sheet1.xml
+pip install -r requirements.txt
+streamlit run app.py                       # arrancar la app
+pytest                                      # toda la suite (56 tests)
+pytest tests/test_fidelity.py -q            # validación de fidelidad al Excel
+pytest tests/test_scoring.py::test_exacto   # un test concreto
+python -m porra.excel_loader                # verificación rápida de extracción
 ```
 
-Los valores de texto de las celdas se almacenan en `xl/sharedStrings.xml` y se referencian por índice desde los `worksheets/sheetN.xml`. Para análisis de datos más serio, usa una librería (p. ej. `openpyxl` en Python) en lugar de parsear el XML a mano.
+En Windows, antepón `PYTHONUTF8=1` al ejecutar scripts que impriman nombres con acentos (la consola usa cp1252 y peta con `México`, `🥇`, etc.). Los datos del fichero son UTF-8 correctos; es solo la consola.
+
+## Arquitectura
+
+`porra/` es un paquete **puro** (sin Streamlit). Streamlit vive en `app.py`, `pages/` y `ui_common.py`.
+
+- **`excel_loader.py`** → `load_tournament()` devuelve un `TournamentData` (equipos, 104 `Match`, 19 `Player`, `ScoringRules`, bracket, tabla de terceros). Toda la extracción es **programática** y verificada por `tests/test_extraction.py` — no hardcodees datos del Excel sin pasar por aquí.
+- **`tournament.py`** → clasificación de grupos con desempates (puntos → DG → GF → enfrentamiento directo → ranking FIFA), `qualified_thirds_groups()` (8 mejores terceros), y `resolve_bracket()`/`resolved_match_teams()` que resuelven placeholders (`1A`, `3ABCDF`, `W74`, `L101`) a selecciones reales.
+- **`scoring.py`** → `scoreboard()` y `score_player()`. `score_match()` es el núcleo y se reutiliza en grupos y KO.
+- **`results_store.py`** → `Results` (resultados + cuadro de honor + ganadores por penaltis) ↔ `data/results.json`.
+- **`github_sync.py`** + `ui_common.persist()` → al guardar, commitea `results.json` al repo si hay `[github]` en `st.secrets` (necesario en Cloud, disco efímero). Sin secrets, solo escribe en disco.
+- **`sources/`** → `ResultsSource` (interfaz), `espn.py`, `wikipedia.py`. `map_to_matches()` empareja por la **pareja** de selecciones (normalizando nombres con la tabla de alias de `base.py`).
+
+Flujo: `excel_loader` (cacheado con `st.cache_data` en `ui_common.get_data()`) → `Results` en `st.session_state` → `tournament` resuelve el cuadro → `scoring` calcula → las páginas renderizan.
+
+## Reglas de puntuación (reproducen ADMIN.xlsx)
+
+Por partido: si aciertas signo **y** marcador → `(signo+diferencia+exacto)*bonus`; si solo el signo → `(signo + diferencia*(1 - dist*0.1))*bonus` acotado a ≥0, donde `dist` = `|local_real-local_predicho|` en empates o `|dif_real-dif_predicha|`; si fallas el signo → 0. Los puntos base escalan por ronda. Además: posiciones exactas de grupo, equipos clasificados por ronda, partidos KO (acertando la **pareja** del cruce, en cualquier orden) y cuadro de honor.
+
+**Fidelidad:** `test_fidelity.py` construye un "jugador perfecto" y comprueba que el motor reproduce **exactamente** los máximos por categoría que el Excel declara en `CLAS` fila 3 (630, 576, 345…; total 4364). Si tocas el scoring, este test debe seguir verde.
+
+## Detalles no evidentes del Excel (hoja ADMIN)
+
+- **Codificación de predicciones**: grupos `"signo|local-visitante"` (`"1|3-1"`, signo ∈ {1,X,2}); KO `"Local-Visitante·signo|l-v"` (dos equipos antes del `·`; ningún nombre lleva guion). Cuadro de honor: nombres.
+- **Columnas de jugador**: la predicción del jugador *i* está en la columna `19 + 3*i` (S, V, Y, …), nombre en la fila 5.
+- **Filas → partido**: los grupos (filas 6-77) se vinculan a WORLDCUP por la fórmula de la columna O (`=WORLDCUP!AC<fila>`); los KO, por la etiqueta de cruce de la columna K.
+- **Grupo de un partido**: en WORLDCUP la etiqueta "Grupo X" solo aparece en la 1ª fila de cada bloque; se deriva del equipo local.
+- **Numeración**: grupos 1-72, 1/16 73-88, 1/8 89-96, 1/4 97-100, 1/2 101-102, 3-4 103, final 104. Bonus por ronda: grupos var. (1 ó 3), 1/16-1/4 = 2, 1/2-final = 3.
+- **Mejores terceros**: hoja `Combinaciones3` (495 combos C(12,8)); cada cruce con tercero tiene como local uno de `1A,1B,1D,1E,1G,1I,1K,1L`.
+
+## Despliegue
+
+Push a `fcperni/world-cup-porra` y conectar en share.streamlit.io (`app.py`). En **Settings → Secrets** pegar un PAT con *Contents: Read and write* (formato en `.streamlit/secrets.toml.example`). `.streamlit/secrets.toml` está en `.gitignore` — nunca subir el token. Solo `docs/ADMIN.xlsx` se despliega; los `.xlsx` de participantes están ignorados.
