@@ -304,6 +304,25 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .honor td.val .nm{ margin-left:7px; }
 .honor td.val .fl-img{ vertical-align:middle; }
 
+/* ---------- estadísticas (KPIs y rankings) ---------- */
+.kpi-grid{ display:grid; gap:12px; margin:.2rem 0 .6rem;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.kpi{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-left:3px solid var(--lime); border-radius:14px;
+  padding:14px 16px; box-shadow:var(--shadow); }
+.kpi .lbl{ text-transform:uppercase; letter-spacing:.1em; font-size:.66rem; color:var(--muted); font-weight:700; }
+.kpi .team{ display:flex; align-items:center; gap:9px; margin-top:9px; font-weight:800;
+  text-transform:uppercase; font-size:1.3rem; }
+.kpi .val{ color:var(--lime); font-weight:700; font-variant-numeric:tabular-nums; margin-top:5px; font-size:.92rem; }
+.rank-list{ display:flex; flex-direction:column; gap:6px; }
+.rank-item{ display:grid; grid-template-columns:22px 1fr auto; align-items:center; gap:10px;
+  padding:9px 14px; background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:10px; }
+.rank-item .n{ color:var(--muted); font-variant-numeric:tabular-nums; text-align:center; }
+.rank-item .who{ display:flex; align-items:center; gap:9px; text-transform:uppercase; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rank-item .v{ font-variant-numeric:tabular-nums; font-weight:800; color:var(--lime); }
+
 /* ---------- móvil ---------- */
 @media (max-width:820px){
   /* las columnas de Streamlit se apilan a ancho completo (legible en móvil) */
@@ -331,5 +350,27 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 """
 
 
+import json
+
+import streamlit.components.v1 as components
+
+
 def inject_theme() -> None:
-    st.markdown("<style>" + _CSS + "</style>", unsafe_allow_html=True)
+    """Inyecta el CSS en el ``<head>`` del documento padre con un id estable.
+
+    Al vivir en el ``<head>`` (que Streamlit no reconstruye al navegar entre
+    páginas), el estilo persiste y NO parpadea, a diferencia de un ``st.markdown``
+    con ``<style>``, que se monta en el bloque principal y se recrea en cada rerun.
+    """
+    payload = json.dumps(_CSS)
+    components.html(
+        "<script>(function(){"
+        "var css=" + payload + ";"
+        "var doc=window.parent.document;"
+        "var tag=doc.getElementById('porra-theme');"
+        "if(!tag){tag=doc.createElement('style');tag.id='porra-theme';doc.head.appendChild(tag);}"
+        "if(tag.textContent!==css){tag.textContent=css;}"
+        "})();</script>",
+        height=0,
+        width=0,
+    )

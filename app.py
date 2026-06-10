@@ -96,6 +96,8 @@ st.markdown(
         <div class="d">Predicciones, aciertos y puntos de cada participante.</div></a>
       <a class="navcard" href="Grupos_y_Brackets" target="_self"><div class="ico">📊</div><div class="t">Grupos y Brackets</div>
         <div class="d">Tablas de grupo y el cuadro de eliminatorias en vivo.</div></a>
+      <a class="navcard" href="Estadísticas" target="_self"><div class="ico">📈</div><div class="t">Estadísticas</div>
+        <div class="d">Favoritos, aciertos por selección y otros KPIs de la porra.</div></a>
     </div>
     """,
     unsafe_allow_html=True,
