@@ -76,7 +76,12 @@ def _github_secrets() -> dict | None:
 
 
 def configure_page() -> None:
-    st.set_page_config(page_title=APP_TITLE, page_icon=APP_ICON, layout="wide")
+    try:
+        st.set_page_config(page_title=APP_TITLE, page_icon=APP_ICON, layout="wide")
+    except Exception:
+        pass  # ya configurada (p.ej. al re-ejecutar)
+    from theme import inject_theme
+    inject_theme()
 
 
 def fmt(value: float) -> str:
