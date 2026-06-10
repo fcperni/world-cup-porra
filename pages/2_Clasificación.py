@@ -16,7 +16,8 @@ results = get_results()
 sb = scoreboard(data, results)
 
 if all(s.total == 0 for s in sb):
-    st.info("Todavía no hay puntos. Introduce resultados en **📝 Resultados**.")
+    st.info("Todavía no hay puntos: aún no se ha jugado ningún partido. La clasificación "
+            "se actualizará automáticamente en cuanto haya resultados.", icon="🗓️")
     st.stop()
 
 # Tabla principal: posición, jugador, total

@@ -1,8 +1,8 @@
 """Pa porra la mía — porra del Mundial 2026.
 
 App Streamlit que analiza la porra de ``docs/ADMIN.xlsx`` reproduciendo la
-puntuación del Excel en Python, y permite introducir los resultados de los
-partidos (manualmente o, más adelante, por scraping de ESPN/Wikipedia).
+puntuación del Excel en Python, y actualiza automáticamente los resultados de los
+partidos por scraping (ESPN, con Wikipedia de reserva).
 
 Ejecutar con:  ``streamlit run app.py``
 """
@@ -73,8 +73,9 @@ else:
         """
         <div class="empty-card">
           <div class="big">El balón aún no rueda</div>
-          <div class="sub">Introduce los primeros resultados en <b>Resultados</b> y la
-          clasificación cobrará vida. El Mundial arranca el 11 de junio de 2026.</div>
+          <div class="sub">Los resultados se cargan <b>automáticamente</b> desde ESPN y
+          Wikipedia; la clasificación cobrará vida en cuanto se juegue el primer partido.
+          El Mundial arranca el 11 de junio de 2026.</div>
         </div>
         """,
         unsafe_allow_html=True,

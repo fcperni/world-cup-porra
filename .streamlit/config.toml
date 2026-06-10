@@ -6,9 +6,13 @@ secondaryBackgroundColor = "#141c25"
 textColor = "#eaf1f3"
 
 # Fuente ÚNICA de toda la UI: Saira. Cargada de forma NATIVA por el tema (formato
-# "familia:url"; sin comillas porque el nombre no tiene espacios). Al ser parte
-# del tema persistente, evita el parpadeo (FOUC) al cambiar de página.
+# "familia:url"; sin comillas porque el nombre no tiene espacios). Se fijan TAMBIÉN
+# headingFont y codeFont a Saira para que titulares y cifras sean Saira de forma
+# persistente y NO parpadeen al cambiar de página (si no, los titulares usarían la
+# fuente por defecto de Streamlit hasta que se aplicara el CSS).
 font = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+headingFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
+codeFont = "Saira:https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
 
 [browser]
 gatherUsageStats = false
