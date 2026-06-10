@@ -60,7 +60,7 @@ nuevos = _auto_update(data, results)
 
 played = sum(1 for m in data.matches if results.has(m.number))
 c1, c2 = st.columns(2)
-c1.metric("Partidos con resultado", f"{played}/104")
+c1.metric("Partidos con resultado", f"{played} / 104")
 c2.metric("Pendientes", 104 - played)
 
 st.caption(

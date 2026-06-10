@@ -42,8 +42,8 @@ st.markdown(
 # ----------------------------------------------------------------- marcador de estado
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Participantes", len(data.players))
-c2.metric("Grupos jugados", f"{played}/72")
-c3.metric("Eliminatorias", f"{total_ko}/32")
+c2.metric("Partidos Fase de Grupos", f"{played} / 72")
+c3.metric("Eliminatorias", f"{total_ko} / 32")
 c4.metric("Fase de grupos", "Completa" if complete else "En curso")
 
 # ----------------------------------------------------------------- líderes
