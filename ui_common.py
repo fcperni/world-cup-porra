@@ -54,9 +54,12 @@ def _sf_session():
 
 
 def get_results() -> Results:
-    """Resultados en estado de sesión.
+    """Resultados en estado de sesión, con sincronización automática app-wide.
 
-    En Snowflake se leen de la tabla ``PORRA_RESULTS``; en local/Cloud, del JSON.
+    Carga desde la tabla ``PORRA_RESULTS`` (Snowflake) o ``results.json`` (local/
+    Cloud) y, al abrir **cualquier** página, incorpora los marcadores nuevos
+    scrapeados (caché de 15 min), de modo que todas las secciones —incluido el
+    Calendario— reflejan los resultados sin tener que pasar por Resultados.
     """
     if "results" not in st.session_state:
         session = _sf_session()
@@ -65,7 +68,57 @@ def get_results() -> Results:
             st.session_state.results = load_results_sf(session)
         else:
             st.session_state.results = load_results()
+    auto_sync(st.session_state.results)
     return st.session_state.results
+
+
+@st.cache_data(ttl=900, show_spinner="Actualizando resultados desde ESPN y Wikipedia…")
+def _fetch_games():
+    """Descarga (cacheada 15 min) los partidos publicados por las fuentes."""
+    from porra.sources.espn import ESPNSource
+    from porra.sources.wikipedia import WikipediaSource
+
+    data = get_data()
+    games = []
+    for source in (ESPNSource(), WikipediaSource()):
+        try:
+            games.extend(source.fetch(data))
+        except Exception:  # noqa: BLE001 — una fuente caída no debe romper la app
+            continue
+    return games
+
+
+def auto_sync(results: Results) -> int:
+    """Incorpora los resultados nuevos de las fuentes. Devuelve cuántos aplicó."""
+    from porra.sources.base import map_to_matches
+    from porra.tournament import resolved_match_teams
+
+    data = get_data()
+    try:
+        games = _fetch_games()
+    except Exception:  # noqa: BLE001
+        return 0
+    applied = 0
+    for _ in range(6):  # varias pasadas: al cerrar una ronda se resuelve la siguiente
+        teams = resolved_match_teams(data, results)
+        proposals = map_to_matches(data, results, games, teams)
+        nuevos = {n: mr for n, mr in proposals.items()
+                  if results.goals(n) != (mr.home_goals, mr.away_goals)}
+        if not nuevos:
+            break
+        for n, mr in nuevos.items():
+            results.set_match(n, mr.home_goals, mr.away_goals)
+            if mr.winner and mr.home_goals == mr.away_goals:
+                results.ko_winners[n] = mr.winner
+            applied += 1
+    if applied:
+        persist(results)
+    return applied
+
+
+def force_resync() -> None:
+    """Limpia la caché de scraping para forzar una actualización inmediata."""
+    _fetch_games.clear()
 
 
 def persist(results: Results) -> None:
