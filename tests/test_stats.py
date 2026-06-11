@@ -66,3 +66,15 @@ def test_opening_match_consensus(data):
     assert s.voters["2"] == ["PACO"]
     assert s.dissenters == 2
     assert not s.is_unanimous
+
+
+def test_team_splits_only_knockout(data):
+    splits = stats.match_team_splits(data)
+    ko_numbers = {m.number for m in data.matches if m.phase.is_knockout}
+    assert set(splits) == ko_numbers
+    for kt in splits.values():
+        assert kt.total <= len(data.players)
+        # cada jugador mete como mucho 2 selecciones en el cruce
+        assert sum(kt.counts.values()) <= 2 * kt.total
+        if kt.counts:
+            assert kt.counts[kt.top_team] == max(kt.counts.values())

@@ -166,6 +166,57 @@ class MatchSplit:
         return self.total - self.counts[self.majority_sign] if self.total else 0
 
 
+@dataclass
+class KoTeamSplit:
+    """Reparto de los equipos que los jugadores meten en un cruce de eliminatoria.
+
+    En KO el jugador no pronostica un 1X2 sobre equipos fijos, sino *qué dos
+    selecciones* llegan al cruce. Aquí se agrega cuántos sitúan a cada selección
+    en ese cruce (cuente como local o visitante).
+
+    * ``voters``: selección -> jugadores que la meten en el cruce.
+    * ``counts``: selección -> nº de jugadores.
+    * ``total``: jugadores con al menos una selección pronosticada en el cruce.
+    """
+
+    match_number: int
+    voters: dict[str, list[str]]
+    counts: dict[str, int]
+    total: int
+
+    @property
+    def ranked(self) -> list[tuple[str, int]]:
+        """Selecciones del cruce de más a menos votadas (desempate alfabético)."""
+        return sorted(self.counts.items(), key=lambda kv: (-kv[1], kv[0]))
+
+    @property
+    def top_team(self) -> str | None:
+        return self.ranked[0][0] if self.counts else None
+
+
+def match_team_splits(data: TournamentData) -> dict[int, KoTeamSplit]:
+    """Reparto de selecciones por cruce de **eliminatoria** (qué equipos prevén)."""
+    out: dict[int, KoTeamSplit] = {}
+    for m in data.matches:
+        if not m.phase.is_knockout:
+            continue
+        voters: dict[str, list[str]] = {}
+        total = 0
+        for p in data.players:
+            pred = p.ko_matches.get(m.number)
+            if not pred:
+                continue
+            teams = {t for t in (pred.home_team, pred.away_team) if t}
+            if not teams:
+                continue
+            total += 1
+            for t in teams:
+                voters.setdefault(t, []).append(p.name)
+        counts = {t: len(v) for t, v in voters.items()}
+        out[m.number] = KoTeamSplit(m.number, voters, counts, total)
+    return out
+
+
 def match_sign_splits(data: TournamentData) -> dict[int, MatchSplit]:
     """Reparto de pronósticos 1X2 por partido de **fase de grupos**.
 

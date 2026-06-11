@@ -361,6 +361,26 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .cz-badge.div{ background:rgba(255,90,60,.14); color:var(--coral); border:1px solid rgba(255,90,60,.4); }
 .cz-extra{ color:var(--muted); font-size:.8rem; margin-top:6px; font-variant-numeric:tabular-nums; }
 .cz-extra b{ color:var(--text); }
+.cz-extra .fl-img{ vertical-align:middle; margin:0 2px; }
+/* eliminatorias: etiqueta de ronda + chips de selecciones del cruce */
+.cz-match.cz-ko{ color:var(--lime); letter-spacing:.04em; }
+.cz-teams{ display:flex; flex-wrap:wrap; gap:6px; margin:11px 0 9px; }
+.cz-chip{ display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px;
+  background:var(--surface2); border:1px solid var(--line);
+  font-family:'Saira',sans-serif; text-transform:uppercase; font-size:.8rem; letter-spacing:.01em; }
+.cz-chip .c{ color:var(--muted); font-variant-numeric:tabular-nums; font-weight:800; }
+.cz-chip.lead{ background:rgba(194,242,60,.14); border-color:rgba(194,242,60,.45); }
+.cz-chip.lead .c{ color:var(--lime); }
+.cz-chip.solo{ border-color:rgba(255,90,60,.4); }
+.cz-chip.solo .c{ color:var(--coral); }
+
+/* ---------- datepicker (calendario emergente): selección legible ---------- */
+/* día(s) extremos del rango: tinta sobre lima, no blanco sobre lima (ilegible) */
+[data-baseweb="calendar"] [aria-selected="true"],
+[data-baseweb="calendar"] [aria-selected="true"] *{ color:#0a0e13 !important; }
+/* días dentro del rango: fondo lima tenue con texto claro legible */
+[data-baseweb="calendar"] [aria-label*="range"]:not([aria-selected="true"]),
+[data-baseweb="calendar"] [aria-label*="Range"]:not([aria-selected="true"]){ color:var(--text) !important; }
 
 /* ---------- móvil ---------- */
 @media (max-width:820px){
