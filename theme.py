@@ -326,6 +326,42 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rank-item .v{ font-variant-numeric:tabular-nums; font-weight:800; color:var(--lime); }
 
+/* ---------- curiosidades (consenso de pronósticos por partido) ---------- */
+.cz{ display:flex; flex-direction:column; gap:9px; }
+.cz-day{ font-family:'Saira',sans-serif; text-transform:uppercase; letter-spacing:.18em;
+  font-size:.72rem; color:var(--lime); margin:1.4rem 0 .35rem; }
+.cz-card{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:12px; padding:12px 16px 13px; box-shadow:var(--shadow); }
+.cz-card.esp{ border-color:rgba(194,242,60,.5);
+  box-shadow:inset 3px 0 0 var(--lime), var(--shadow);
+  background:linear-gradient(165deg,rgba(194,242,60,.06) 0%, var(--ink2) 90%); }
+.cz-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.cz-match{ font-family:'Saira',sans-serif; text-transform:uppercase; font-weight:700;
+  font-size:1.12rem; letter-spacing:.01em; display:flex; align-items:center; gap:8px; min-width:0; }
+.cz-match .fl-img{ vertical-align:middle; }
+.cz-match .sc{ background:var(--lime); color:#0a0e13; border-radius:7px; padding:1px 9px;
+  font-weight:700; font-variant-numeric:tabular-nums; }
+.cz-match .vs{ color:var(--muted); font-size:.8rem; font-weight:600; }
+.cz-grp{ margin-left:auto; font-size:.64rem; letter-spacing:.05em; color:var(--muted);
+  text-transform:uppercase; white-space:nowrap; }
+.cz-bar{ display:flex; height:9px; border-radius:5px; overflow:hidden; margin:11px 0 9px;
+  background:rgba(255,255,255,.05); }
+.cz-bar .seg{ height:100%; }
+.cz-bar .s1{ background:var(--lime); }
+.cz-bar .sx{ background:var(--muted); }
+.cz-bar .s2{ background:var(--coral); }
+.cz-note{ font-size:.94rem; color:var(--text); line-height:1.5; }
+.cz-note .who{ font-weight:700; }
+.cz-note .o1{ color:var(--lime); font-weight:700; }
+.cz-note .ox{ color:#c8d2da; font-weight:700; }
+.cz-note .o2{ color:var(--coral); font-weight:700; }
+.cz-badge{ display:inline-block; font-family:'Saira',sans-serif; text-transform:uppercase;
+  letter-spacing:.06em; font-size:.62rem; font-weight:800; padding:2px 8px; border-radius:6px; margin-right:8px; }
+.cz-badge.uni{ background:rgba(194,242,60,.16); color:var(--lime); border:1px solid rgba(194,242,60,.4); }
+.cz-badge.div{ background:rgba(255,90,60,.14); color:var(--coral); border:1px solid rgba(255,90,60,.4); }
+.cz-extra{ color:var(--muted); font-size:.8rem; margin-top:6px; font-variant-numeric:tabular-nums; }
+.cz-extra b{ color:var(--text); }
+
 /* ---------- móvil ---------- */
 @media (max-width:820px){
   /* las columnas de Streamlit se apilan a ancho completo (legible en móvil) */

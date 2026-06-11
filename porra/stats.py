@@ -10,6 +10,7 @@ Dos familias:
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import dataclass
 
 from .models import KO_ORDER, Phase, TournamentData
 from .results_store import Results
@@ -123,3 +124,69 @@ def match_accuracy(data: TournamentData, results: Results) -> dict[int, float]:
 
 def group_matches_played(data: TournamentData, results: Results) -> int:
     return sum(1 for m in data.matches if m.phase is Phase.GROUPS and results.has(m.number))
+
+
+# --------------------------------------------------------------- curiosidades
+
+SIGNS = ("1", "X", "2")  # local gana, empate, visitante gana
+
+
+@dataclass
+class MatchSplit:
+    """Reparto de los pronósticos 1X2 de un partido de grupos entre los jugadores.
+
+    * ``voters``: signo ("1"/"X"/"2") -> lista de nombres que lo eligieron, en el
+      orden original de los jugadores.
+    * ``counts``: signo -> nº de votos.
+    * ``top_score``: ``((local, visitante), nº)`` del marcador exacto más repetido,
+      o ``None`` si nadie pronosticó.
+    * ``total``: nº de pronósticos válidos.
+    """
+
+    match_number: int
+    voters: dict[str, list[str]]
+    counts: dict[str, int]
+    top_score: tuple[tuple[int, int], int] | None
+    total: int
+
+    @property
+    def majority_sign(self) -> str | None:
+        """Signo más votado (desempate por el orden 1, X, 2). None si no hay votos."""
+        if not self.total:
+            return None
+        return max(SIGNS, key=lambda s: (self.counts[s], -SIGNS.index(s)))
+
+    @property
+    def is_unanimous(self) -> bool:
+        return self.total > 0 and self.counts[self.majority_sign] == self.total
+
+    @property
+    def dissenters(self) -> int:
+        """Cuántos jugadores se apartan del signo mayoritario."""
+        return self.total - self.counts[self.majority_sign] if self.total else 0
+
+
+def match_sign_splits(data: TournamentData) -> dict[int, MatchSplit]:
+    """Reparto de pronósticos 1X2 por partido de **fase de grupos**.
+
+    Solo grupos: en eliminatorias el jugador pronostica el *cruce* (qué dos
+    selecciones se enfrentan), no un 1X2 sobre equipos fijos, así que el consenso
+    no es comparable.
+    """
+    out: dict[int, MatchSplit] = {}
+    for m in data.matches:
+        if m.phase is not Phase.GROUPS:
+            continue
+        voters: dict[str, list[str]] = {s: [] for s in SIGNS}
+        scores: Counter = Counter()
+        for p in data.players:
+            pred = p.group_matches.get(m.number)
+            if not pred or not pred.valid or pred.sign not in voters:
+                continue
+            voters[pred.sign].append(p.name)
+            scores[(pred.home_goals, pred.away_goals)] += 1
+        counts = {s: len(v) for s, v in voters.items()}
+        total = sum(counts.values())
+        top = scores.most_common(1)[0] if scores else None
+        out[m.number] = MatchSplit(m.number, voters, counts, top, total)
+    return out

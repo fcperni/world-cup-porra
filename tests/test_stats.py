@@ -44,3 +44,25 @@ def test_team_accuracy_with_results(data):
 
 def test_match_accuracy_empty_without_results(data):
     assert stats.match_accuracy(data, Results()) == {}
+
+
+def test_match_sign_splits_only_group_matches(data):
+    splits = stats.match_sign_splits(data)
+    group_numbers = {m.number for m in data.matches if m.phase is Phase.GROUPS}
+    assert set(splits) == group_numbers
+    for s in splits.values():
+        assert s.total <= len(data.players)
+        assert sum(s.counts.values()) == s.total
+        if s.total:
+            assert s.counts[s.majority_sign] == max(s.counts.values())
+            assert s.dissenters == s.total - s.counts[s.majority_sign]
+
+
+def test_opening_match_consensus(data):
+    """El partido inaugural (M1): 17 dan local, BONERA empate, PACO visitante."""
+    s = stats.match_sign_splits(data)[1]
+    assert s.majority_sign == "1"
+    assert s.voters["X"] == ["BONERA"]
+    assert s.voters["2"] == ["PACO"]
+    assert s.dissenters == 2
+    assert not s.is_unanimous

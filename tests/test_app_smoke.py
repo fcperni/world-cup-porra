@@ -11,7 +11,8 @@ PAGES = [
     "pages/3_Jugador.py",
     "pages/4_Grupos_y_Brackets.py",
     "pages/5_Calendario.py",
-    "pages/6_Estadísticas.py",
+    "pages/6_Curiosidades.py",
+    "pages/7_Estadísticas.py",
 ]
 
 

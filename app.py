@@ -97,7 +97,9 @@ with safe_page():
          "Predicciones, aciertos y puntos de cada participante."),
         ("pages/4_Grupos_y_Brackets.py", "📊 Grupos y Brackets",
          "Tablas de grupo y el cuadro de eliminatorias en vivo."),
-        ("pages/6_Estadísticas.py", "📈 Estadísticas",
+        ("pages/6_Curiosidades.py", "🔮 Curiosidades",
+         "El reparto de pronósticos partido a partido: consensos y rebeldes."),
+        ("pages/7_Estadísticas.py", "📈 Estadísticas",
          "Favoritos, aciertos por selección y otros KPIs de la porra."),
     ]
     nav_cols = st.columns(3)
