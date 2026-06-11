@@ -468,5 +468,5 @@ if __name__ == "__main__":  # verificación rápida de extracción
         f"{pos}º={p.group_positions[('A', pos)]}" for pos in range(1, 5)))
     print(f"  Clasificados 1/16: {len(p.qualified[Phase.R32])} equipos; finalistas: {p.qualified[Phase.FINAL]}")
     print(f"  Honor: {p.honor}")
-    ko = p.ko_matches[247]
-    print(f"  Final (247): {ko.raw!r} -> {ko.home_team} vs {ko.away_team}, sign={ko.sign} {ko.home_goals}-{ko.away_goals}")
+    ko = p.ko_matches[104]  # la final es el partido nº 104
+    print(f"  Final (p104): {ko.raw!r} -> {ko.home_team} vs {ko.away_team}, sign={ko.sign} {ko.home_goals}-{ko.away_goals}")

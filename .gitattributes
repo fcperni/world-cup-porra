@@ -1,0 +1,3 @@
+# Tratar los Excel como binarios: evita normalización de saltos de línea que
+# corrompería el fichero.
+*.xlsx binary
