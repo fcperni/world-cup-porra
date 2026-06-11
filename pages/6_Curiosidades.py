@@ -14,6 +14,8 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    from datetime import date, timedelta
+
     from porra import stats
     from porra.flags import flag_img
     from porra.models import Phase
@@ -64,29 +66,29 @@ with safe_page():
         if s.dissenters <= 5:
             partes = "; ".join(
                 f'{outcome_html(sg, home, away)} — {names_html(s.voters[sg])}' for sg in minor)
-            return (f'<b>{s.counts[maj]}</b> dan {outcome_html(maj, home, away)}. '
+            return (f'<b>{s.counts[maj]}</b> lo tienen claro: {outcome_html(maj, home, away)}. '
                     f'Los únicos que se salen: {partes}.')
         # partido genuinamente repartido
         reparto = " · ".join(
-            f'<b>{s.counts[sg]}</b> {outcome_html(sg, home, away)}'
+            f'{outcome_html(sg, home, away)} (<b>{s.counts[sg]}</b>)'
             for sg in stats.SIGNS if s.counts[sg])
         extra = ""
         rare = minor[0] if minor else None
         if rare and s.counts[rare] <= 3:
-            extra = (f' El dato: solo {names_html(s.voters[rare])} '
-                     f'ven {outcome_html(rare, home, away)}.')
-        return f'<span class="cz-badge div">Repartido</span>{reparto}.{extra}'
+            extra = (f' El dato: {outcome_html(rare, home, away)} — '
+                     f'solo {names_html(s.voters[rare])}.')
+        return f'<span class="cz-badge div">Repartido</span>Reparto: {reparto}.{extra}'
 
-    def extras_html(s, m, home: str, away: str) -> str:
+    def extras_html(s, m) -> str:
         """Línea secundaria: marcador estrella y, si se jugó, quién acertó."""
         bits = []
         if s.top_score and s.top_score[1] >= 3:
             (h, a), c = s.top_score
-            bits.append(f"Marcador estrella: <b>{h}-{a}</b> ({c})")
+            bits.append(f"Marcador más repetido: <b>{h}-{a}</b> ({c})")
         if results.has(m.number):
             asign = results.sign(m.number)
-            quien = "acertó la mayoría" if asign == s.majority_sign else "¡la minoría tenía razón!"
-            bits.append(f"Resultado: {outcome(asign, home, away)} — {quien}")
+            bits.append("Acertó la mayoría" if asign == s.majority_sign
+                        else "¡Tenía razón la minoría!")
         return f'<div class="cz-extra">{" · ".join(bits)}</div>' if bits else ""
 
     def bar_html(s) -> str:
@@ -110,22 +112,42 @@ with safe_page():
         )
 
     # --------------------------------------------------------------- filtros
-    only_curious = st.toggle(
+    dated = [m for m in data.matches if m.phase is Phase.GROUPS and m.date]
+    min_d = min(m.date.date() for m in dated)
+    max_d = max(m.date.date() for m in dated)
+    # Por defecto se ocultan los partidos disputados hace más de 3 días.
+    default_start = min(max(min_d, date.today() - timedelta(days=3)), max_d)
+
+    c1, c2 = st.columns([2, 1])
+    sel = c1.date_input(
+        "Rango de fechas", value=(default_start, max_d),
+        min_value=min_d, max_value=max_d, format="DD/MM/YYYY",
+        help="Por defecto se ocultan los partidos disputados hace más de 3 días; "
+             "amplía el rango para revisar jornadas anteriores.",
+    )
+    only_curious = c2.toggle(
         "Solo los más jugosos", value=False,
         help="Unanimidades, casi-unanimidades (≤2 rebeldes) y partidos muy repartidos.",
     )
 
-    matches = sorted((m for m in data.matches if m.phase is Phase.GROUPS),
-                     key=lambda m: ((m.date.timestamp() if m.date else 0), m.number))
+    # st.date_input devuelve 1 o 2 fechas según se esté terminando de elegir el rango
+    if isinstance(sel, (list, tuple)):
+        start = sel[0] if sel else default_start
+        end = sel[1] if len(sel) > 1 else max_d
+    else:
+        start = end = sel
 
     def is_juicy(s) -> bool:
         return s.total > 0 and (s.is_unanimous or s.dissenters <= 2 or s.dissenters > 5)
 
-    if only_curious:
-        matches = [m for m in matches if is_juicy(splits[m.number])]
+    matches = sorted(
+        (m for m in dated if start <= m.date.date() <= end
+         and (not only_curious or is_juicy(splits[m.number]))),
+        key=lambda m: (m.date.timestamp(), m.number),
+    )
 
     if not matches:
-        st.info("No hay partidos que mostrar.", icon="🗓️")
+        st.info("No hay partidos en el rango seleccionado.", icon="🗓️")
         st.stop()
 
     # --------------------------------------------------------------- render por día
@@ -143,8 +165,10 @@ with safe_page():
             + head_html(m, m.home, m.away)
             + bar_html(s)
             + f'<div class="cz-note">{note_html(s, m.home, m.away)}</div>'
-            + extras_html(s, m, m.home, m.away)
+            + extras_html(s, m)
             + "</div>"
         )
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
+
+    st.caption(f"{len(matches)} partidos en el rango seleccionado.")
