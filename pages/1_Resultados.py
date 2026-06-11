@@ -9,29 +9,32 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ui_common import configure_page, force_resync, get_data, get_results
+from page_guard import safe_page
 
-configure_page()
-st.title("📝 Resultados")
+with safe_page():
+    from ui_common import configure_page, force_resync, get_data, get_results
 
-data = get_data()
-results = get_results()  # dispara la sincronización automática (cacheada 15 min)
+    configure_page()
+    st.title("📝 Resultados")
 
-played = sum(1 for m in data.matches if results.has(m.number))
-c1, c2 = st.columns(2)
-c1.metric("Partidos con resultado", f"{played} / 104")
-c2.metric("Pendientes", 104 - played)
+    data = get_data()
+    results = get_results()  # dispara la sincronización automática (cacheada 15 min)
 
-st.caption(
-    "Los resultados se actualizan **automáticamente** desde ESPN (y Wikipedia como "
-    "reserva) al abrir cualquier sección de la app, con caché de 15 minutos. No hay "
-    "que introducir ni sincronizar nada a mano."
-)
+    played = sum(1 for m in data.matches if results.has(m.number))
+    c1, c2 = st.columns(2)
+    c1.metric("Partidos con resultado", f"{played} / 104")
+    c2.metric("Pendientes", 104 - played)
 
-if st.button("🔄 Forzar actualización ahora"):
-    force_resync()
-    st.rerun()
+    st.caption(
+        "Los resultados se actualizan **automáticamente** desde ESPN (y Wikipedia como "
+        "reserva) al abrir cualquier sección de la app, con caché de 15 minutos. No hay "
+        "que introducir ni sincronizar nada a mano."
+    )
 
-if played == 0:
-    st.info("Aún no hay partidos disputados. Se recogerán automáticamente en cuanto se jueguen.",
-            icon="🗓️")
+    if st.button("🔄 Forzar actualización ahora"):
+        force_resync()
+        st.rerun()
+
+    if played == 0:
+        st.info("Aún no hay partidos disputados. Se recogerán automáticamente en cuanto se jueguen.",
+                icon="🗓️")
