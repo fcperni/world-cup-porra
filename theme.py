@@ -375,12 +375,12 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .cz-chip.solo .c{ color:var(--coral); }
 
 /* ---------- datepicker (calendario emergente): selección legible ---------- */
-/* día(s) extremos del rango: tinta sobre lima, no blanco sobre lima (ilegible) */
-[data-baseweb="calendar"] [aria-selected="true"],
-[data-baseweb="calendar"] [aria-selected="true"] *{ color:#0a0e13 !important; }
-/* días dentro del rango: fondo lima tenue con texto claro legible */
-[data-baseweb="calendar"] [aria-label*="range"]:not([aria-selected="true"]),
-[data-baseweb="calendar"] [aria-label*="Range"]:not([aria-selected="true"]){ color:var(--text) !important; }
+/* Los días extremos del rango pintan un círculo lima en su ::after y el dígito
+   queda en blanco encima (ilegible). Streamlit NO usa aria-selected aquí: el día
+   elegido es un [role="gridcell"] cuyo aria-label empieza por "Selected …".
+   Forzamos el dígito a tinta para que se lea sobre la lima. */
+[data-baseweb="calendar"] [aria-label*="Selected"],
+[data-baseweb="calendar"] [aria-label*="Selected"] *{ color:#0a0e13 !important; }
 
 /* ---------- móvil ---------- */
 @media (max-width:820px){
