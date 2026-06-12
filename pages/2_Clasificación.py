@@ -39,7 +39,7 @@ with safe_page():
     st.dataframe(
         main,
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
         height=full_height(len(main)),
         column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")},
     )
@@ -57,7 +57,7 @@ with safe_page():
         st.dataframe(
             detail,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             height=full_height(len(detail)),
             column_config={c: st.column_config.NumberColumn(format="%.1f")
                            for c in active + ["Total"]},
@@ -72,55 +72,60 @@ with safe_page():
     _MO = {1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
            7: "jul", 8: "ago", 9: "sep", 10: "oct", 11: "nov", 12: "dic"}
 
-    days, history = position_history(data, results)
-    if len(days) < 2:
-        st.caption("La evolución aparecerá cuando haya resultados de al menos dos días.")
-    else:
-        labels = [f"{_WD[d.weekday()]} {d.day} {_MO[d.month]}" for d in days]
-        n = len(sb)
-        rows = [
-            {"Día": labels[i], "Jugador": proper_name(name), "Posición": pos, "_o": i}
-            for name, positions in history.items()
-            for i, pos in enumerate(positions)
-        ]
-        ev = pd.DataFrame(rows)
+    # El gráfico va en su propio try: si Altair fallara en algún entorno, la
+    # clasificación (lo importante) sigue mostrándose en lugar de tirar la página.
+    try:
+        days, history = position_history(data, results)
+        if len(days) < 2:
+            st.caption("La evolución aparecerá cuando haya resultados de al menos dos días.")
+        else:
+            labels = [f"{_WD[d.weekday()]} {d.day} {_MO[d.month]}" for d in days]
+            n = len(sb)
+            rows = [
+                {"Día": labels[i], "Jugador": proper_name(name), "Posición": pos, "_o": i}
+                for name, positions in history.items()
+                for i, pos in enumerate(positions)
+            ]
+            ev = pd.DataFrame(rows)
 
-        TEXT, MUTED, LINE, LIME = "#eaf1f3", "#8a99a6", "#27333f", "#c2f23c"
-        # Click en la leyenda para resaltar la línea de un jugador (el resto se atenúa).
-        sel = alt.selection_point(fields=["Jugador"], bind="legend")
+            TEXT, MUTED, LINE = "#eaf1f3", "#8a99a6", "#27333f"
+            # Click en la leyenda para resaltar la línea de un jugador (el resto se atenúa).
+            sel = alt.selection_point(fields=["Jugador"], bind="legend")
 
-        base = alt.Chart(ev).encode(
-            x=alt.X("Día:N", sort=labels, title=None,
-                    axis=alt.Axis(labelAngle=-40, labelColor=MUTED, domainColor=LINE,
-                                  tickColor=LINE, labelFontSize=11)),
-            y=alt.Y("Posición:Q",
-                    scale=alt.Scale(domain=[n + 0.5, 0.5]),
-                    axis=alt.Axis(values=list(range(1, n + 1)), title="Posición",
-                                  titleColor=MUTED, labelColor=MUTED, tickCount=n,
-                                  domainColor=LINE, gridColor=LINE, gridOpacity=0.35)),
-            color=alt.Color("Jugador:N",
-                            scale=alt.Scale(scheme="tableau20"),
-                            legend=alt.Legend(orient="bottom", title=None, columns=4,
-                                              symbolType="stroke", labelColor=TEXT,
-                                              labelFontSize=12, symbolStrokeWidth=3)),
-            opacity=alt.condition(sel, alt.value(1.0), alt.value(0.12)),
-            order=alt.Order("_o:Q"),
-        )
-        lines = base.mark_line(strokeWidth=2.5, interpolate="monotone")
-        points = base.mark_point(filled=True, size=55, opacity=1).encode(
-            opacity=alt.condition(sel, alt.value(1.0), alt.value(0.12)),
-            tooltip=[alt.Tooltip("Jugador:N"),
-                     alt.Tooltip("Posición:Q", title="Posición"),
-                     alt.Tooltip("Día:N", title="Día")],
-        )
-        chart = (
-            (lines + points)
-            .add_params(sel)
-            .properties(height=460)
-            .configure_view(strokeWidth=0, fill="transparent")
-            .configure(background="transparent")
-            .configure_legend(labelLimit=140, symbolLimit=n)
-        )
-        st.altair_chart(chart, use_container_width=True)
-        st.caption("La posición 1 es el liderato. Toca un jugador en la leyenda para "
-                   "resaltar su recorrido; vuelve a tocarlo para ver todos.")
+            base = alt.Chart(ev).encode(
+                x=alt.X("Día:N", sort=labels, title=None,
+                        axis=alt.Axis(labelAngle=-40, labelColor=MUTED, domainColor=LINE,
+                                      tickColor=LINE, labelFontSize=11)),
+                y=alt.Y("Posición:Q",
+                        scale=alt.Scale(domain=[n + 0.5, 0.5]),
+                        axis=alt.Axis(values=list(range(1, n + 1)), title="Posición",
+                                      titleColor=MUTED, labelColor=MUTED, tickCount=n,
+                                      domainColor=LINE, gridColor=LINE, gridOpacity=0.35)),
+                color=alt.Color("Jugador:N",
+                                scale=alt.Scale(scheme="tableau20"),
+                                legend=alt.Legend(orient="bottom", title=None, columns=4,
+                                                  symbolType="stroke", labelColor=TEXT,
+                                                  labelFontSize=12, symbolStrokeWidth=3)),
+                opacity=alt.condition(sel, alt.value(1.0), alt.value(0.12)),
+                order=alt.Order("_o:Q"),
+            )
+            lines = base.mark_line(strokeWidth=2.5, interpolate="monotone")
+            points = base.mark_point(filled=True, size=55, opacity=1).encode(
+                opacity=alt.condition(sel, alt.value(1.0), alt.value(0.12)),
+                tooltip=[alt.Tooltip("Jugador:N"),
+                         alt.Tooltip("Posición:Q", title="Posición"),
+                         alt.Tooltip("Día:N", title="Día")],
+            )
+            chart = (
+                (lines + points)
+                .add_params(sel)
+                .properties(height=460)
+                .configure_view(strokeWidth=0, fill="transparent")
+                .configure(background="transparent")
+                .configure_legend(labelLimit=140, symbolLimit=n)
+            )
+            st.altair_chart(chart, width="stretch")
+            st.caption("La posición 1 es el liderato. Toca un jugador en la leyenda para "
+                       "resaltar su recorrido; vuelve a tocarlo para ver todos.")
+    except Exception:  # noqa: BLE001 — el gráfico es secundario; nunca debe tumbar la página
+        st.caption("La evolución de posiciones no está disponible ahora mismo.")

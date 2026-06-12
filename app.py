@@ -105,5 +105,5 @@ with safe_page():
     nav_cols = st.columns(3)
     for i, (path, label, desc) in enumerate(NAV):
         with nav_cols[i % 3]:
-            st.page_link(path, label=label, use_container_width=True)
+            st.page_link(path, label=label, width="stretch")
             st.caption(desc)

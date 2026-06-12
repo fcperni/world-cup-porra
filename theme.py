@@ -416,34 +416,14 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 """
 
 
-import json
-
-import streamlit.components.v1 as components
-
-_FONT_URL = "https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700;800;900&display=swap"
-
-
 def inject_theme() -> None:
-    """Inyecta la fuente y el CSS en el ``<head>`` del documento padre, con ids
-    estables, para que persistan al navegar entre páginas y NO parpadeen.
+    """Inyecta el CSS del tema mediante ``st.html``.
 
-    Un ``st.markdown('<style>')`` se monta en el bloque principal y se recrea en
-    cada rerun (de ahí el FOUC); aquí lo colocamos en el ``<head>``, que Streamlit
-    no reconstruye, e incluimos también el ``<link>`` de la fuente.
+    ``st.html`` **no** usa iframe y, cuando el contenido son únicamente etiquetas
+    ``<style>``, Streamlit lo envía al *event container*: no ocupa espacio en la
+    página, se aplica globalmente y no parpadea al navegar (es el reemplazo
+    recomendado del antiguo ``components.html`` con ``<script>`` —ahora obsoleto—
+    que inyectaba el CSS en el ``<head>``). La fuente Saira la carga de forma
+    nativa el tema desde ``.streamlit/config.toml``.
     """
-    payload = json.dumps(_CSS)
-    font = json.dumps(_FONT_URL)
-    components.html(
-        "<script>(function(){var d=window.parent.document;"
-        "function lnk(id,rel,href,cross){if(!d.getElementById(id)){var l=d.createElement('link');"
-        "l.id=id;l.rel=rel;l.href=href;if(cross){l.crossOrigin='anonymous';}d.head.appendChild(l);}}"
-        "lnk('porra-pc1','preconnect','https://fonts.googleapis.com',false);"
-        "lnk('porra-pc2','preconnect','https://fonts.gstatic.com',true);"
-        "lnk('porra-font','stylesheet'," + font + ",false);"
-        "var css=" + payload + ";var t=d.getElementById('porra-theme');"
-        "if(!t){t=d.createElement('style');t.id='porra-theme';d.head.appendChild(t);}"
-        "if(t.textContent!==css){t.textContent=css;}"
-        "})();</script>",
-        height=0,
-        width=0,
-    )
+    st.html("<style>" + _CSS + "</style>")

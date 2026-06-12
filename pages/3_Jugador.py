@@ -61,7 +61,7 @@ with safe_page():
         gsel = st.multiselect("Filtrar por grupo", sorted(df["Grupo"].unique()))
         if gsel:
             df = df[df["Grupo"].isin(gsel)]
-        st.dataframe(df, hide_index=True, use_container_width=True,
+        st.dataframe(df, hide_index=True, width="stretch",
                      column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
 
     with tab_ko:
@@ -83,7 +83,7 @@ with safe_page():
                                         if pred and pred.sign else "—"),
                     "Cruce real": real,
                 })
-        st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
 
     with tab_honor:
         honor_filled = {k: v for k, v in player.honor.items() if v}
