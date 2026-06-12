@@ -274,16 +274,22 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
   border:1px solid var(--line); border-radius:13px; overflow:hidden; box-shadow:var(--shadow); }
 .grp-h{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; font-size:1.05rem;
   padding:9px 14px; background:var(--ink2); border-bottom:1px solid var(--line); }
-.grp-t{ width:100%; border-collapse:collapse; }
+/* table-layout fijo: las columnas numéricas reservan ancho propio (la de Selección
+   absorbe el resto y trunca con elipsis), así el signo +/- de la DG nunca desborda
+   la pastilla —que recorta por overflow:hidden de las esquinas redondeadas—. */
+.grp-t{ width:100%; border-collapse:collapse; table-layout:fixed; }
 .grp-t th{ font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
-  font-weight:700; padding:6px 6px; text-align:center; border-bottom:1px solid var(--line); }
+  font-weight:700; padding:6px 3px; text-align:center; border-bottom:1px solid var(--line); }
 .grp-t th.sel{ text-align:left; padding-left:10px; }
-.grp-t td{ padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045);
+.grp-t td{ padding:7px 3px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045);
   font-variant-numeric:tabular-nums; font-size:.9rem; }
 .grp-t tr:last-child td{ border-bottom:0; }
-.grp-t td.pos{ color:var(--muted); width:22px; }
+.grp-t th:first-child, .grp-t td.pos{ width:24px; }
+/* las cinco columnas numéricas (Pts, J, GF, GC, DG) */
+.grp-t th:nth-child(n+3), .grp-t td:nth-child(n+3){ width:34px; }
+.grp-t td.pos{ color:var(--muted); }
 .grp-t td.sel{ text-align:left; font-weight:600; white-space:nowrap; overflow:hidden;
-  text-overflow:ellipsis; max-width:140px; padding-left:10px; }
+  text-overflow:ellipsis; padding-left:10px; }
 .grp-t td.sel .fl-img{ vertical-align:middle; margin-right:7px; }
 .grp-t td.pts{ font-weight:800; color:var(--text); }
 .grp-t tr.q{ background:rgba(194,242,60,.07); box-shadow:inset 2px 0 0 var(--lime); }
