@@ -280,7 +280,8 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .grp-t{ width:100%; border-collapse:collapse; table-layout:fixed; }
 .grp-t th{ font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
   font-weight:700; padding:6px 3px; text-align:center; border-bottom:1px solid var(--line); }
-.grp-t th.sel{ text-align:left; padding-left:10px; }
+.grp-t th.sel{ text-align:left; padding-left:10px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .grp-t td{ padding:7px 3px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045);
   font-variant-numeric:tabular-nums; font-size:.9rem; }
 .grp-t tr:last-child td{ border-bottom:0; }
