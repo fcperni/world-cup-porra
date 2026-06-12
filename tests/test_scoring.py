@@ -4,7 +4,8 @@ import pytest
 
 from porra.excel_loader import load_tournament
 from porra.models import Phase
-from porra.scoring import score_match
+from porra.results_store import Results
+from porra.scoring import position_history, score_match
 
 
 @pytest.fixture(scope="module")
@@ -62,3 +63,35 @@ def test_credito_no_negativo(rules):
 def test_signo_fallado(rules):
     # pred local gana vs real visitante gana -> 0
     assert s(rules, 1, 2, 1, 0, 1) == 0
+
+
+# --------------------------------------------------------------- evolución de posiciones
+
+def test_position_history_vacio_sin_resultados():
+    data = load_tournament()
+    days, history = position_history(data, Results())
+    assert days == []
+    assert all(positions == [] for positions in history.values())
+
+
+def test_position_history_un_dia_por_fecha_y_rango_valido():
+    data = load_tournament()
+    res = Results()
+    # primeros 12 partidos de grupos (reparten varias fechas), resultados variados
+    gm = [m for m in data.matches if m.phase is Phase.GROUPS and m.date][:12]
+    for i, m in enumerate(gm):
+        res.set_match(m.number, i % 3, (i + 1) % 3)
+
+    days, history = position_history(data, res)
+    n = len(data.players)
+
+    # un día por fecha distinta con resultado, en orden ascendente
+    fechas = sorted({m.date.date() for m in gm})
+    assert days == fechas
+    # cada jugador tiene una posición por día y todas están en [1, n]
+    assert set(history) == {p.name for p in data.players}
+    assert all(len(positions) == len(days) for positions in history.values())
+    assert all(1 <= v <= n for positions in history.values() for v in positions)
+    # ranking de competición: cada día hay un líder (posición 1)
+    for di in range(len(days)):
+        assert min(positions[di] for positions in history.values()) == 1

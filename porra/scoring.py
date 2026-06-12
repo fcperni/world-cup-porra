@@ -259,3 +259,50 @@ def scoreboard(data: TournamentData, results: Results) -> list[PlayerScore]:
               for p in data.players]
     scores.sort(key=lambda s: s.total, reverse=True)
     return scores
+
+
+def _competition_ranks(scores: list[PlayerScore]) -> dict[str, int]:
+    """Posición (1 = líder) por jugador a partir de un scoreboard ya ordenado.
+
+    Ranking de competición: los empatados a puntos comparten posición (1, 2, 2, 4…).
+    """
+    ranks: dict[str, int] = {}
+    pos = 0
+    for i, s in enumerate(scores):
+        if i == 0 or s.total != scores[i - 1].total:
+            pos = i + 1
+        ranks[s.name] = pos
+    return ranks
+
+
+def position_history(data: TournamentData, results: Results,
+                     ) -> tuple[list, dict[str, list[int]]]:
+    """Evolución de la posición de cada jugador al cierre de cada día disputado.
+
+    Para cada día con al menos un resultado introducido, recalcula el scoreboard
+    considerando **solo** los partidos jugados hasta el final de ese día y anota
+    la posición de cada jugador (1 = líder, con empates compartidos).
+
+    Devuelve ``(dias_ordenados, {nombre: [posicion_por_dia]})``. El cuadro de
+    honor (botas/balones, de entrada manual y sin fecha) solo se contabiliza a
+    partir del día de la final, para no inflar posiciones antes de tiempo.
+    """
+    from .results_store import HONOR_KEYS, Results as _Results
+
+    date_by_num = {m.number: m.date.date() for m in data.matches if m.date}
+    days = sorted({date_by_num[n] for n in results.matches if n in date_by_num})
+    final_date = date_by_num.get(104)
+
+    history: dict[str, list[int]] = {p.name: [] for p in data.players}
+    for day in days:
+        sub_matches = {n: g for n, g in results.matches.items()
+                       if n in date_by_num and date_by_num[n] <= day}
+        sub_winners = {n: s for n, s in results.ko_winners.items()
+                       if n in date_by_num and date_by_num[n] <= day}
+        honor = (dict(results.honor) if final_date and day >= final_date
+                 else {k: None for k in HONOR_KEYS})
+        snapshot = _Results(matches=sub_matches, honor=honor, ko_winners=sub_winners)
+        ranks = _competition_ranks(scoreboard(data, snapshot))
+        for name in history:
+            history[name].append(ranks[name])
+    return days, history
