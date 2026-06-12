@@ -68,6 +68,26 @@ def test_opening_match_consensus(data):
     assert not s.is_unanimous
 
 
+def test_player_dissent_range(data):
+    d = stats.player_dissent(data)
+    # un valor por jugador, no negativo y acotado por el nº de partidos de grupos
+    assert set(d) == {p.name for p in data.players}
+    n_group = sum(1 for m in data.matches if m.phase is Phase.GROUPS)
+    assert all(0 <= v <= n_group for v in d.values())
+
+
+def test_popular_scorelines_and_profile_consistent(data):
+    sc = stats.popular_scorelines(data)
+    prof = stats.prediction_profile(data)
+    # el total del perfil coincide con la suma de todos los marcadores contados
+    assert sum(sc.values()) == prof["total"]
+    assert 0.0 <= prof["pct_draws"] <= 1.0
+    assert prof["avg_goals"] >= 0.0
+    # las claves son pares (local, visitante) de enteros no negativos
+    for (h, a), v in sc.items():
+        assert isinstance(h, int) and isinstance(a, int) and h >= 0 and a >= 0 and v >= 1
+
+
 def test_team_splits_only_knockout(data):
     splits = stats.match_team_splits(data)
     ko_numbers = {m.number for m in data.matches if m.phase.is_knockout}

@@ -217,6 +217,54 @@ def match_team_splits(data: TournamentData) -> dict[int, KoTeamSplit]:
     return out
 
 
+def player_dissent(data: TournamentData) -> Counter:
+    """Por jugador: en cuántos partidos de grupos se aparta del signo mayoritario.
+
+    Mide lo "contracorriente" que es cada participante: un valor alto = se moja
+    con pronósticos minoritarios; bajo = vota casi siempre con la mayoría.
+    """
+    splits = match_sign_splits(data)
+    out: Counter = Counter({p.name: 0 for p in data.players})
+    for s in splits.values():
+        if not s.total:
+            continue
+        maj = s.majority_sign
+        for sign in SIGNS:
+            if sign == maj:
+                continue
+            for name in s.voters[sign]:
+                out[name] += 1
+    return out
+
+
+def popular_scorelines(data: TournamentData) -> Counter:
+    """Marcadores exactos más pronosticados en toda la fase de grupos (l-v)."""
+    c: Counter = Counter()
+    for p in data.players:
+        for pred in p.group_matches.values():
+            if pred.valid:
+                c[(pred.home_goals, pred.away_goals)] += 1
+    return c
+
+
+def prediction_profile(data: TournamentData) -> dict[str, float]:
+    """Perfil agregado de los pronósticos de grupos: total, % de empates y goles medios."""
+    total = draws = goals = 0
+    for p in data.players:
+        for pred in p.group_matches.values():
+            if not pred.valid:
+                continue
+            total += 1
+            goals += pred.home_goals + pred.away_goals
+            if pred.sign == "X":
+                draws += 1
+    return {
+        "total": total,
+        "pct_draws": draws / total if total else 0.0,
+        "avg_goals": goals / total if total else 0.0,
+    }
+
+
 def match_sign_splits(data: TournamentData) -> dict[int, MatchSplit]:
     """Reparto de pronósticos 1X2 por partido de **fase de grupos**.
 
