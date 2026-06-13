@@ -13,6 +13,7 @@ PAGES = [
     "pages/5_Grupos_y_Brackets.py",
     "pages/6_Curiosidades.py",
     "pages/7_Estadísticas.py",
+    "pages/8_Admin.py",
 ]
 
 

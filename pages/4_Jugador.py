@@ -9,6 +9,7 @@ from page_guard import safe_page
 with safe_page():
     import pandas as pd
 
+    import analytics
     from porra.flags import flag_img
     from porra.models import KO_ORDER, Phase
     from porra.scoring import score_match, score_player
@@ -29,6 +30,7 @@ with safe_page():
         placeholder="Escribe para buscar…",
     )
     player = next(p for p in data.players if p.name == selected)
+    analytics.track("Jugador", player.name)
 
     score = score_player(data, results, player)
     st.metric("Puntos totales", fmt(score.total))

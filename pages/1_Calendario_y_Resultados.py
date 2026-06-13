@@ -14,12 +14,14 @@ from page_guard import safe_page
 with safe_page():
     from datetime import date
 
+    import analytics
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import resolved_match_teams
     from ui_common import PHASE_LABELS, configure_page, get_data, get_live, get_results
 
     configure_page()
+    analytics.track("Calendario y Resultados")
     st.title("📅 Calendario y Resultados")
 
     data = get_data()

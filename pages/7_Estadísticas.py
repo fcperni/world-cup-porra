@@ -7,12 +7,14 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    import analytics
     from porra import stats
     from porra.flags import flag_img
     from porra.models import Phase
     from ui_common import configure_page, get_data, get_results, proper_name
 
     configure_page()
+    analytics.track("Estadísticas")
     st.title("📈 Estadísticas")
 
     data = get_data()

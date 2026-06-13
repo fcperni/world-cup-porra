@@ -19,6 +19,7 @@ from page_guard import safe_page
 with safe_page():
     from datetime import date, timedelta
 
+    import analytics
     from porra import stats
     from porra.flags import flag_img
     from porra.models import Phase
@@ -26,6 +27,7 @@ with safe_page():
     from ui_common import PHASE_LABELS, configure_page, get_data, get_results, proper_name
 
     configure_page()
+    analytics.track("Curiosidades")
     st.title("🔮 Curiosidades")
     st.caption(
         "Cómo se reparten los **19 pronósticos** en cada partido: en grupos, el 1X2; "

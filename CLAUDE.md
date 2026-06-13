@@ -52,6 +52,8 @@ En Windows, antepón `PYTHONUTF8=1` al ejecutar scripts que impriman nombres con
 - **`github_sync.py`** + `ui_common.persist()` → al guardar, commitea `results.json` al repo si hay `[github]` en `st.secrets` (necesario en Cloud, disco efímero). Sin secrets, solo escribe en disco.
 - **`sources/`** → `ResultsSource` (interfaz), `espn.py`, `wikipedia.py`. `map_to_matches()` empareja por la **pareja** de selecciones (normalizando nombres con la tabla de alias de `base.py`); solo partidos **finalizados**. `map_live_matches()` hace el mismo emparejado para los partidos **en juego** (`state == "in"`, vía ESPN), que `ui_common.get_live()` expone como marcador en directo. El directo **no** se escribe en `Results` ni cuenta para los puntos: solo se muestra (Calendario y Predicciones, con indicador "en juego" y autorefresco vía `st.fragment(run_every=30)`); los puntos se calculan únicamente cuando el partido finaliza y `auto_sync` lo incorpora a `results.json`.
 
+- **`analytics.py`** → analítica de uso **privada** y opcional. Cada página llama a `analytics.track(pagina, detalle)`; registra una fila por *(sesión, página, detalle)* en Postgres (`st.connection("analytics")`), deduplicando en `st.session_state` para que los reruns no inflen las cifras. Es **no-op** si no hay `[connections.analytics]` en secrets. Se consulta en `pages/8_Admin.py`, oculta del menú lateral (CSS en `theme.py`) y protegida por `st.secrets['admin']['password']`. Solo guarda un id de sesión aleatorio (sin IP ni datos personales).
+
 Flujo: `excel_loader` (cacheado con `st.cache_data` en `ui_common.get_data()`) → `Results` en `st.session_state` → `tournament` resuelve el cuadro → `scoring` calcula → las páginas renderizan.
 
 ## Reglas de puntuación (reproducen ADMIN.xlsx)

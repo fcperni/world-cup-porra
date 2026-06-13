@@ -14,12 +14,14 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    import analytics
     from porra.models import Phase
     from porra.scoring import scoreboard
     from porra.tournament import group_phase_complete
     from ui_common import configure_page, fmt, get_data, get_results, proper_name
 
     configure_page()
+    analytics.track("Inicio")
 
     data = get_data()
     results = get_results()

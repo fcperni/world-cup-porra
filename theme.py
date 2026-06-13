@@ -21,6 +21,10 @@ _CSS = """
   --shadow:0 22px 48px -26px rgba(0,0,0,.85);
 }
 
+/* Oculta la página Admin del menú lateral (sigue accesible por URL /Admin y
+   protegida por contraseña). No es seguridad, solo evita mostrar el enlace. */
+[data-testid="stSidebarNav"] a[href$="/Admin"]{ display:none; }
+
 /* ---------- fondo: tinta + focos + grano ---------- */
 .stApp{
   background:

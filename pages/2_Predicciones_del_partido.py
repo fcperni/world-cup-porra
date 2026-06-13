@@ -15,6 +15,7 @@ from page_guard import safe_page
 with safe_page():
     from datetime import date
 
+    import analytics
     from porra import stats
     from porra.flags import flag_img
     from porra.models import Phase
@@ -91,6 +92,8 @@ with safe_page():
     # Mantén la URL en sincronía (así el enlace es compartible y persiste al recargar).
     if str(selected) != st.query_params.get("match"):
         st.query_params["match"] = str(selected)
+
+    analytics.track("Predicciones del partido", str(selected))
 
     # El detalle se autorrefresca solo si el partido elegido está en juego al cargar.
     refresh_every = 30 if selected in live_at_load else None

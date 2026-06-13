@@ -9,12 +9,14 @@ from page_guard import safe_page
 with safe_page():
     from collections import defaultdict
 
+    import analytics
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import compute_group_standings, qualified_thirds_groups, resolved_match_teams
     from ui_common import configure_page, get_data, get_results
 
     configure_page()
+    analytics.track("Grupos y Brackets")
     st.title("📊 Grupos y Brackets")
 
     data = get_data()

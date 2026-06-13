@@ -5,3 +5,5 @@ requests>=2.31
 beautifulsoup4>=4.12
 lxml>=5.0
 PyGithub>=2.3
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
