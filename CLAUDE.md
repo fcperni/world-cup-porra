@@ -50,7 +50,7 @@ En Windows, antepón `PYTHONUTF8=1` al ejecutar scripts que impriman nombres con
 - **`scoring.py`** → `scoreboard()` y `score_player()`. `score_match()` es el núcleo y se reutiliza en grupos y KO.
 - **`results_store.py`** → `Results` (resultados + cuadro de honor + ganadores por penaltis) ↔ `data/results.json`.
 - **`github_sync.py`** + `ui_common.persist()` → al guardar, commitea `results.json` al repo si hay `[github]` en `st.secrets` (necesario en Cloud, disco efímero). Sin secrets, solo escribe en disco.
-- **`sources/`** → `ResultsSource` (interfaz), `espn.py`, `wikipedia.py`. `map_to_matches()` empareja por la **pareja** de selecciones (normalizando nombres con la tabla de alias de `base.py`).
+- **`sources/`** → `ResultsSource` (interfaz), `espn.py`, `wikipedia.py`. `map_to_matches()` empareja por la **pareja** de selecciones (normalizando nombres con la tabla de alias de `base.py`); solo partidos **finalizados**. `map_live_matches()` hace el mismo emparejado para los partidos **en juego** (`state == "in"`, vía ESPN), que `ui_common.get_live()` expone como marcador en directo. El directo **no** se escribe en `Results` ni cuenta para los puntos: solo se muestra (Calendario y Predicciones, con indicador "en juego" y autorefresco vía `st.fragment(run_every=30)`); los puntos se calculan únicamente cuando el partido finaliza y `auto_sync` lo incorpora a `results.json`.
 
 Flujo: `excel_loader` (cacheado con `st.cache_data` en `ui_common.get_data()`) → `Results` en `st.session_state` → `tournament` resuelve el cuadro → `scoring` calcula → las páginas renderizan.
 

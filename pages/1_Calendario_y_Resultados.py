@@ -17,14 +17,12 @@ with safe_page():
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import resolved_match_teams
-    from ui_common import PHASE_LABELS, configure_page, get_data, get_results
+    from ui_common import PHASE_LABELS, configure_page, get_data, get_live, get_results
 
     configure_page()
     st.title("📅 Calendario y Resultados")
 
     data = get_data()
-    results = get_results()
-    teams = resolved_match_teams(data, results)
 
     _WD = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
     _MO = {1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun",
@@ -38,7 +36,7 @@ with safe_page():
             return f"Grupo {m.group} · {m.matchday}"
         return PHASE_LABELS[m.phase]
 
-    def names(m):
+    def names(m, teams):
         """(nombre_local, nombre_visitante, es_placeholder) para el partido."""
         if m.phase is Phase.GROUPS:
             return m.home, m.away, False
@@ -55,7 +53,12 @@ with safe_page():
         inner = f"{nm} {chip}" if side == "home" else f"{chip} {nm}"
         return f'<div class="{cls}">{inner}</div>'
 
-    def score_html(m) -> str:
+    def score_html(m, results, live, teams) -> str:
+        lm = live.get(m.number)
+        if lm is not None:  # partido en juego: marcador provisional, no puntúa
+            clk = f'<span class="clk">{lm.clock}</span>' if lm.clock else ""
+            return (f'<div class="fx-score live"><span class="livedot"></span>'
+                    f'{lm.home_goals}-{lm.away_goals}{clk}</div>')
         g = results.goals(m.number)
         if g is None:
             when = m.date.strftime("%H:%M") if m.date else "vs"
@@ -63,7 +66,7 @@ with safe_page():
         extra = ""
         if m.phase.is_knockout and g[0] == g[1] and m.number in results.ko_winners:
             side = results.ko_winners[m.number]
-            h, a, _ = names(m)
+            h, a, _ = names(m, teams)
             extra = f'<span class="pen">pen {flag_img(h if side=="home" else a, height=9)}</span>'
         return f'<div class="fx-score played">{g[0]}-{g[1]}{extra}</div>'
 
@@ -72,40 +75,62 @@ with safe_page():
     choice = c1.radio("Fase", ["Todas", "Grupos", "Eliminatorias"], horizontal=True, label_visibility="collapsed")
     only_played = c2.toggle("Solo jugados")
 
-    matches = sorted(data.matches, key=lambda m: ((m.date.timestamp() if m.date else 0), m.number))
-    if choice == "Grupos":
-        matches = [m for m in matches if m.phase is Phase.GROUPS]
-    elif choice == "Eliminatorias":
-        matches = [m for m in matches if m.phase.is_knockout]
-    if only_played:
-        matches = [m for m in matches if results.has(m.number)]
+    # Si hay partidos en juego al cargar, el bloque de partidos se autorrefresca.
+    live_at_load = get_live(get_results())
+    refresh_every = 30 if live_at_load else None
 
-    if not matches:
-        st.info("No hay partidos que mostrar con este filtro.")
-        st.stop()
+    @st.fragment(run_every=refresh_every)
+    def render_matches():
+        results = get_results()            # re-sincroniza (incorpora marcadores finales)
+        teams = resolved_match_teams(data, results)
+        live = get_live(results)           # marcadores en directo, frescos (caché 30 s)
 
-    # ----------------------------------------------------------------- render por día
-    html = ['<div class="fx">']
-    current_day = None
-    for m in matches:
-        d = m.date.date() if m.date else None
-        if d != current_day:
-            current_day = d
-            html.append(f'<div class="fx-day">{fmt_day(d) if d else "Por determinar"}</div>')
-        h, a, ph = names(m)
-        esp = " esp" if "España" in (h, a) else ""
-        html.append(
-            f'<a class="fx-row{esp}" href="Predicciones_del_partido?match={m.number}" '
-            f'target="_self" title="Ver las predicciones de este partido">'
-            f'<div class="fx-tag">{tag(m)}</div>'
-            f'{team_html(h, "home", ph)}'
-            f'{score_html(m)}'
-            f'{team_html(a, "away", ph)}'
-            "</a>"
-        )
-    html.append("</div>")
-    st.markdown("".join(html), unsafe_allow_html=True)
+        if live:
+            n = len(live)
+            st.markdown(
+                f'<div class="live-banner"><span class="livedot"></span>'
+                f'<b>{n}</b> partido{"s" if n > 1 else ""} en juego · marcador en directo · '
+                f'los puntos se calcularán al finalizar</div>',
+                unsafe_allow_html=True,
+            )
 
-    played = sum(1 for m in matches if results.has(m.number))
-    st.caption(f"{played} de {len(matches)} partidos jugados. "
-               "Pincha en cualquier partido para ver todas las predicciones de los 19.")
+        matches = sorted(data.matches, key=lambda m: ((m.date.timestamp() if m.date else 0), m.number))
+        if choice == "Grupos":
+            matches = [m for m in matches if m.phase is Phase.GROUPS]
+        elif choice == "Eliminatorias":
+            matches = [m for m in matches if m.phase.is_knockout]
+        if only_played:
+            matches = [m for m in matches if results.has(m.number)]
+
+        if not matches:
+            st.info("No hay partidos que mostrar con este filtro.")
+            return
+
+        html = ['<div class="fx">']
+        current_day = None
+        for m in matches:
+            d = m.date.date() if m.date else None
+            if d != current_day:
+                current_day = d
+                html.append(f'<div class="fx-day">{fmt_day(d) if d else "Por determinar"}</div>')
+            h, a, ph = names(m, teams)
+            esp = " esp" if "España" in (h, a) else ""
+            liv = " live" if m.number in live else ""
+            html.append(
+                f'<a class="fx-row{esp}{liv}" href="Predicciones_del_partido?match={m.number}" '
+                f'target="_self" title="Ver las predicciones de este partido">'
+                f'<div class="fx-tag">{tag(m)}</div>'
+                f'{team_html(h, "home", ph)}'
+                f'{score_html(m, results, live, teams)}'
+                f'{team_html(a, "away", ph)}'
+                "</a>"
+            )
+        html.append("</div>")
+        st.markdown("".join(html), unsafe_allow_html=True)
+
+        played = sum(1 for m in matches if results.has(m.number))
+        nota = " · se actualiza solo cada 30 s" if live else ""
+        st.caption(f"{played} de {len(matches)} partidos jugados{nota}. "
+                   "Pincha en cualquier partido para ver todas las predicciones de los 19.")
+
+    render_matches()

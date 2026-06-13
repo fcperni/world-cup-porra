@@ -70,11 +70,15 @@ def _parse_scoreboard(payload: dict) -> list[ScrapedGame]:
                 away, ag = name, score
         status = (event.get("status", {}) or {}).get("type", {}) or {}
         finished = bool(status.get("completed"))
+        # estado del directo: "pre" (sin empezar) | "in" (en juego) | "post" (acabado)
+        state = status.get("state")
+        clock = status.get("shortDetail") or status.get("detail") or status.get("description")
         when = _parse_date(event.get("date"))
         winner = _winner_from(comp)
         if home and away:
             games.append(ScrapedGame(home=home, away=away, home_goals=hg, away_goals=ag,
-                                    finished=finished, when=when, winner=winner))
+                                    finished=finished, when=when, winner=winner,
+                                    state=state, clock=clock))
     return games
 
 

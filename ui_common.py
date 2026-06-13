@@ -88,6 +88,50 @@ def _fetch_games():
     return games
 
 
+@st.cache_data(ttl=30, show_spinner=False)
+def _fetch_live_games():
+    """Descarga (cacheada 30 s) los partidos de ESPN para el seguimiento en directo.
+
+    Solo ESPN: su API JSON es rápida e informa del estado del partido (en juego /
+    finalizado) y del reloj, mientras que Wikipedia no da el directo de forma fiable.
+    """
+    from porra.sources.espn import ESPNSource
+
+    try:
+        return ESPNSource().fetch(get_data())
+    except Exception:  # noqa: BLE001 — el directo es best-effort
+        return []
+
+
+def _combined_games():
+    """Juegos para sincronizar finales: el directo (fresco, 30 s) tiene prioridad
+    sobre la descarga combinada de 15 min ante un mismo enfrentamiento."""
+    seen: set[tuple[str, str]] = set()
+    out = []
+    for g in list(_fetch_live_games()) + list(_fetch_games()):
+        key = (g.home, g.away)
+        if key not in seen:
+            seen.add(key)
+            out.append(g)
+    return out
+
+
+def get_live(results: Results) -> dict:
+    """Marcadores en directo (``{nº: LiveMatch}``) de los partidos en juego.
+
+    Provisional y **no** persistido: no toca ``results`` ni cuenta para los puntos,
+    que solo se calculan cuando el partido finaliza y entra por :func:`auto_sync`.
+    Excluye los que ya tienen resultado final almacenado.
+    """
+    from porra.sources.base import map_live_matches
+    from porra.tournament import resolved_match_teams
+
+    data = get_data()
+    teams = resolved_match_teams(data, results)
+    live = map_live_matches(data, results, _fetch_live_games(), teams)
+    return {n: lm for n, lm in live.items() if not results.has(n)}
+
+
 def auto_sync(results: Results) -> int:
     """Incorpora los resultados nuevos de las fuentes. Devuelve cuántos aplicó."""
     from porra.sources.base import map_to_matches
@@ -95,7 +139,7 @@ def auto_sync(results: Results) -> int:
 
     data = get_data()
     try:
-        games = _fetch_games()
+        games = _combined_games()
     except Exception:  # noqa: BLE001
         return 0
     applied = 0
@@ -119,6 +163,7 @@ def auto_sync(results: Results) -> int:
 def force_resync() -> None:
     """Limpia la caché de scraping para forzar una actualización inmediata."""
     _fetch_games.clear()
+    _fetch_live_games.clear()
 
 
 def persist(results: Results) -> None:
