@@ -87,10 +87,8 @@ with safe_page():
     # ----------------------------------------------------------------- navegación
     st.markdown('<div class="section-label">Explora la porra</div>', unsafe_allow_html=True)
     NAV = [
-        ("pages/1_Resultados.py", "📝 Resultados",
-         "Marcadores actualizados automáticamente desde ESPN y Wikipedia."),
-        ("pages/5_Calendario.py", "📅 Calendario",
-         "Todos los partidos y sus marcadores de un vistazo."),
+        ("pages/1_Calendario_y_Resultados.py", "📅 Calendario y Resultados",
+         "Todos los partidos y sus marcadores, actualizados automáticamente desde ESPN y Wikipedia."),
         ("pages/2_Clasificación.py", "🏆 Clasificación",
          "Ranking de los 19 con desglose por categoría."),
         ("pages/3_Jugador.py", "👤 Jugador",

@@ -25,7 +25,7 @@ exactamente los **máximos por categoría** que el propio Excel declara
 
 ```
 app.py                     Entrypoint Streamlit
-pages/                     Resultados · Clasificación · Jugador · Grupos y Brackets
+pages/                     Calendario y Resultados · Clasificación · Jugador · Grupos y Brackets
 ui_common.py               Carga cacheada + estado de sesión + persistencia
 porra/
   excel_loader.py          Extracción de ADMIN.xlsx

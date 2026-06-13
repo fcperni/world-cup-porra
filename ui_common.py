@@ -58,8 +58,8 @@ def get_results() -> Results:
 
     Carga desde la tabla ``PORRA_RESULTS`` (Snowflake) o ``results.json`` (local/
     Cloud) y, al abrir **cualquier** página, incorpora los marcadores nuevos
-    scrapeados (caché de 15 min), de modo que todas las secciones —incluido el
-    Calendario— reflejan los resultados sin tener que pasar por Resultados.
+    scrapeados (caché de 15 min), de modo que todas las secciones —incluido
+    Calendario y Resultados— reflejan los marcadores sin intervención manual.
     """
     if "results" not in st.session_state:
         session = _sf_session()

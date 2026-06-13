@@ -1,4 +1,9 @@
-"""Calendario — consulta sencilla de todos los partidos y sus resultados."""
+"""Calendario y Resultados — consulta sencilla de todos los partidos y sus resultados.
+
+Los resultados se actualizan AUTOMÁTICAMENTE desde ESPN (Wikipedia de reserva) al
+abrir cualquier página (ver ``ui_common.get_results``); no hay que introducir nada
+a mano.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +20,7 @@ with safe_page():
     from ui_common import PHASE_LABELS, configure_page, get_data, get_results
 
     configure_page()
-    st.title("📅 Calendario")
+    st.title("📅 Calendario y Resultados")
 
     data = get_data()
     results = get_results()
