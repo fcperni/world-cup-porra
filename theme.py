@@ -226,6 +226,10 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .fx-score.played{ background:var(--lime); color:#0a0e13; }
 .fx-score.pending{ color:var(--muted); border:1px solid var(--line); font-size:.78rem; padding:4px 0; }
 .fx-score .pen{ display:block; font-size:.58rem; letter-spacing:.04em; }
+/* la fila es un enlace a la página de predicciones del partido */
+a.fx-row{ text-decoration:none; color:inherit; cursor:pointer;
+  transition:border-color .15s, transform .15s, box-shadow .15s; }
+a.fx-row:hover{ border-color:rgba(194,242,60,.55); transform:translateY(-1px); box-shadow:var(--shadow); }
 @media (max-width:640px){
   .fx-row{ grid-template-columns:1fr 58px 1fr; gap:8px; padding:8px 11px; }
   .fx-tag{ display:none; }
@@ -380,6 +384,55 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .cz-chip.lead .c{ color:var(--lime); }
 .cz-chip.solo{ border-color:rgba(255,90,60,.4); }
 .cz-chip.solo .c{ color:var(--coral); }
+
+/* ---------- predicciones del partido ---------- */
+.prd-hd{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:14px; padding:15px 18px; box-shadow:var(--shadow);
+  margin-bottom:1.1rem; }
+.prd-hd.esp{ border-color:rgba(194,242,60,.5); box-shadow:inset 3px 0 0 var(--lime), var(--shadow);
+  background:linear-gradient(165deg,rgba(194,242,60,.06) 0%, var(--ink2) 90%); }
+.prd-tag{ font-family:'Saira',sans-serif; text-transform:uppercase; letter-spacing:.14em;
+  font-size:.7rem; color:var(--lime); margin-bottom:.7rem; }
+.prd-match{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; }
+.prd-match .t{ font-family:'Saira',sans-serif; text-transform:uppercase; font-size:1.45rem;
+  letter-spacing:.01em; display:flex; align-items:center; gap:11px; min-width:0; }
+.prd-match .t.home{ justify-content:flex-end; text-align:right; }
+.prd-match .t .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.prd-match .t .fl-img{ flex:0 0 auto; }
+.prd-sc{ font-family:'Saira',sans-serif; font-weight:700; font-size:1.45rem; padding:5px 16px;
+  border-radius:10px; text-align:center; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.prd-sc.played{ background:var(--lime); color:#0a0e13; }
+.prd-sc.pending{ color:var(--muted); border:1px solid var(--line); font-size:1.05rem; }
+.prd-pen{ margin-top:.7rem; font-size:.82rem; color:var(--muted); text-align:center; }
+.prd-pen .fl-img{ vertical-align:middle; margin:0 2px; }
+.prd-legend{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:1rem; font-size:.82rem;
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+.prd-legend .sgn{ margin-right:5px; }
+
+.prd{ width:100%; border-collapse:collapse; border:1px solid var(--line);
+  border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
+.prd th{ text-align:left; text-transform:uppercase; letter-spacing:.1em; font-size:.68rem;
+  font-weight:800; color:var(--lime); background:var(--ink2); padding:10px 14px;
+  border-bottom:2px solid var(--line); }
+.prd th.r{ text-align:right; }
+.prd td{ padding:9px 14px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+.prd tr:last-child td{ border-bottom:0; }
+.prd td.who{ font-weight:700; white-space:nowrap; }
+.prd td.pr{ font-family:'Saira',sans-serif; }
+.prd td.pr .mk{ font-variant-numeric:tabular-nums; font-weight:700; margin:0 4px; letter-spacing:.02em; }
+.prd td.pr .tn{ text-transform:uppercase; font-size:.95rem; }
+.prd td.pr .fl-img{ vertical-align:middle; margin:0 4px; }
+.prd td.pr .dash{ color:var(--muted); font-style:italic; text-transform:none; }
+.prd td.pt{ text-align:right; font-variant-numeric:tabular-nums; font-weight:800;
+  color:var(--muted); white-space:nowrap; }
+.prd tr.win td.pt{ color:var(--lime); }
+.prd tr.miss td{ color:var(--muted); }
+.prd .ok{ color:var(--lime); font-weight:800; font-size:.72rem; margin-left:8px;
+  text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+.sgn{ display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px;
+  padding:0 6px; border-radius:6px; font-family:'Saira',sans-serif; font-weight:800; font-size:.78rem;
+  color:#0a0e13; vertical-align:middle; }
+.sgn.s1{ background:var(--lime); } .sgn.sx{ background:#c8d2da; } .sgn.s2{ background:var(--coral); }
 
 /* ---------- datepicker (calendario emergente): selección legible ---------- */
 /* Los días extremos del rango pintan un círculo lima en su ::after y el dígito

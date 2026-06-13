@@ -95,15 +95,17 @@ with safe_page():
         h, a, ph = names(m)
         esp = " esp" if "España" in (h, a) else ""
         html.append(
-            f'<div class="fx-row{esp}">'
+            f'<a class="fx-row{esp}" href="Predicciones_del_partido?match={m.number}" '
+            f'target="_self" title="Ver las predicciones de este partido">'
             f'<div class="fx-tag">{tag(m)}</div>'
             f'{team_html(h, "home", ph)}'
             f'{score_html(m)}'
             f'{team_html(a, "away", ph)}'
-            "</div>"
+            "</a>"
         )
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
 
     played = sum(1 for m in matches if results.has(m.number))
-    st.caption(f"{played} de {len(matches)} partidos jugados.")
+    st.caption(f"{played} de {len(matches)} partidos jugados. "
+               "Pincha en cualquier partido para ver todas las predicciones de los 19.")
