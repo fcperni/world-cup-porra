@@ -243,6 +243,7 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 /* partido en juego: marcador provisional en directo (aún no puntúa) */
 .fx-score.live{ background:rgba(255,90,60,.16); color:var(--coral); border:1px solid rgba(255,90,60,.5);
   display:flex; align-items:center; justify-content:center; gap:6px; }
+.fx-score.live .sc-now{ display:inline-flex; align-items:center; gap:6px; }
 .fx-score.live .clk{ font-size:.62rem; letter-spacing:.03em; opacity:.85; }
 .livedot{ width:7px; height:7px; border-radius:50%; background:var(--coral); display:inline-block;
   flex:0 0 auto; animation:pulse 1.2s ease-in-out infinite; }
@@ -261,6 +262,9 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
   .fx-row{ grid-template-columns:1fr 58px 1fr; gap:8px; padding:8px 11px; }
   .fx-tag{ display:none; }
   .fx-team{ font-size:1rem; }
+  /* marcador en directo: apila el reloj bajo el marcador para no desbordar la columna */
+  .fx-score.live{ flex-direction:column; gap:1px; padding:3px 2px; line-height:1.1; }
+  .fx-score.live .clk{ font-size:.56rem; }
 }
 
 /* ---------- cuadro de eliminatorias (bracket) ---------- */

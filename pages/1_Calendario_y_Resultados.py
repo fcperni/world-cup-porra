@@ -59,8 +59,9 @@ with safe_page():
         lm = live.get(m.number)
         if lm is not None:  # partido en juego: marcador provisional, no puntúa
             clk = f'<span class="clk">{lm.clock}</span>' if lm.clock else ""
-            return (f'<div class="fx-score live"><span class="livedot"></span>'
-                    f'{lm.home_goals}-{lm.away_goals}{clk}</div>')
+            return (f'<div class="fx-score live"><span class="sc-now">'
+                    f'<span class="livedot"></span>{lm.home_goals}-{lm.away_goals}</span>'
+                    f'{clk}</div>')
         g = results.goals(m.number)
         if g is None:
             when = m.date.strftime("%H:%M") if m.date else "vs"
