@@ -496,6 +496,13 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
   .board-row .pts{ font-size:1.05rem; }
   .board-row .pts small{ display:block; margin:0; line-height:1; }
   .navgrid{ grid-template-columns:1fr; }
+  /* cabecera de Predicciones: encoge nombres y marcador para que no se desborde
+     en pantallas estrechas (la caja "en directo" es más ancha por el punto) */
+  .prd-match{ gap:9px; }
+  .prd-match .t{ font-size:1.12rem; gap:7px; }
+  .prd-sc{ font-size:1.2rem; padding:5px 11px; }
+  .prd-sc.pending{ font-size:.95rem; }
+  .prd-sc.live{ gap:6px; padding:5px 10px; }
   [data-testid="stMetric"]{ padding:13px 14px 11px; }
   [data-testid="stMetricValue"]{ font-size:1.5rem; }
   .stTabs [data-baseweb="tab"]{ font-size:.95rem; letter-spacing:.03em; }
