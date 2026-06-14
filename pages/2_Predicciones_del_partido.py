@@ -169,9 +169,14 @@ with safe_page():
             if played:
                 items.sort(key=lambda it: (-(it[2] or 0), proper_name(it[0]).lower()))
             else:
-                items.sort(key=lambda it: (
-                    stats.SIGNS.index(it[1].sign) if it[1] and it[1].valid else 9,
-                    proper_name(it[0]).lower()))
+                # 1X2 → resultado (marcador pronosticado) → alfabético
+                def grp_key(it):
+                    name, pred, _ = it
+                    if pred and pred.valid:
+                        return (stats.SIGNS.index(pred.sign), pred.home_goals,
+                                pred.away_goals, proper_name(name).lower())
+                    return (9, 0, 0, proper_name(name).lower())
+                items.sort(key=grp_key)
 
             rows = []
             for name, pred, pts in items:
@@ -224,7 +229,14 @@ with safe_page():
             if played:
                 items.sort(key=lambda it: (-(it[2] or 0), not it[3], proper_name(it[0]).lower()))
             else:
-                items.sort(key=lambda it: (not it[3], proper_name(it[0]).lower()))
+                # 1X2 → resultado (marcador pronosticado) → alfabético
+                def ko_key(it):
+                    name, pred, _, _ = it
+                    if pred and pred.home_team and pred.away_team and pred.sign is not None:
+                        return (stats.SIGNS.index(pred.sign), pred.home_goals,
+                                pred.away_goals, proper_name(name).lower())
+                    return (9, 0, 0, proper_name(name).lower())
+                items.sort(key=ko_key)
 
             rows = []
             for name, pred, pts, hit in items:
