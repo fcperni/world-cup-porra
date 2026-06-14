@@ -171,6 +171,16 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .board-row.r1 .bar{ background:linear-gradient(90deg,#caa23a,var(--gold)); }
 .board-row.r2 .rank{ color:#cdd6dd; } .board-row.r3 .rank{ color:#d6925a; }
 
+/* Top 5 por abajo (farolillos rojos) */
+.board.cold .board-row{
+  background:linear-gradient(165deg,rgba(255,90,60,.07) 0%, var(--ink2) 100%);
+  border-color:rgba(255,90,60,.22);
+}
+.board.cold .board-row .rank{ color:var(--coral); }
+.board.cold .board-row .pts{ color:var(--coral); }
+.board.cold .board-row .bar{ background:linear-gradient(90deg,#b5331f,var(--coral)); }
+.board.cold .board-row.last{ border-color:rgba(255,90,60,.5); box-shadow:0 0 0 1px rgba(255,90,60,.18), var(--shadow); }
+
 .medal{ font-size:1.1rem; }
 @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
 

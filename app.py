@@ -73,6 +73,29 @@ with safe_page():
             )
         st.markdown('<div class="board">' + "".join(rows) + "</div>", unsafe_allow_html=True)
         st.caption("Clasificación completa y desglose por categoría en la página **Clasificación**.")
+
+        # ------------------------------------------------------------- farolillos rojos
+        ranked = [s for s in sb if s.total > 0]
+        n = len(ranked)
+        if n > 5:
+            bottom = ranked[-5:]
+            start = n - len(bottom) + 1
+            st.markdown('<div class="section-label">Farolillos rojos</div>', unsafe_allow_html=True)
+            brows = []
+            for j, s in enumerate(bottom):
+                pos = start + j
+                pct = max(6, round(s.total / maxpts * 100))
+                last = " last" if pos == n else ""
+                brows.append(
+                    f'<div class="board-row{last}" style="animation-delay:{j*70}ms">'
+                    f'<div class="rank">{pos}</div>'
+                    f'<div class="meta"><div class="who">{proper_name(s.name)}</div>'
+                    f'<div class="barwrap"><span class="bar" style="width:{pct}%"></span></div></div>'
+                    f'<div class="pts">{fmt(s.total)}<small>PTS</small></div>'
+                    f"</div>"
+                )
+            st.markdown('<div class="board cold">' + "".join(brows) + "</div>", unsafe_allow_html=True)
+            st.caption("Los 5 con menos puntos. ¡Aún hay torneo por delante!")
     else:
         st.markdown(
             """
