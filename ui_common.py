@@ -213,6 +213,84 @@ def configure_page() -> None:
         pass  # ya configurada (p.ej. al re-ejecutar)
     from theme import inject_theme
     inject_theme()
+    render_music_player()
+
+
+# URL directa del MP3 (CDN de Suno) del himno de la porra "Pa porra la mía" (Lasa 2.0).
+# La página https://suno.com/song/<id> sirve el audio en https://cdn1.suno.ai/<id>.mp3.
+_SONG_URL = "https://cdn1.suno.ai/6c62706a-5c1f-4089-ab3f-6722ef0f6f4b.mp3"
+
+# Mini-reproductor autocontenido. Va en un iframe (components.html) porque necesita
+# JS propio para los botones; aislado, no interfiere con el resto de la página.
+# Arranca PAUSADO (preload="none", sin autoplay): solo suena si el usuario le da al play.
+_MUSIC_HTML = """
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+ @import url('https://fonts.googleapis.com/css2?family=Saira:wght@500;700;800&display=swap');
+ *{ box-sizing:border-box; }
+ body{ margin:0; font-family:'Saira','Segoe UI',sans-serif; }
+ .mp{ background:linear-gradient(165deg,#1b2632 0%,#0c1118 100%); border:1px solid #27333f;
+   border-radius:13px; padding:12px 13px; color:#eaf1f3; }
+ .mp .ttl{ display:flex; align-items:center; gap:7px; font-weight:800; text-transform:uppercase;
+   letter-spacing:.02em; font-size:.92rem; }
+ .mp .sub{ color:#8a99a6; font-size:.66rem; text-transform:uppercase; letter-spacing:.1em;
+   margin:2px 0 11px; }
+ .mp .ctr{ display:flex; align-items:center; gap:9px; }
+ .mp button{ cursor:pointer; border:0; border-radius:9px; font-family:'Saira',sans-serif;
+   font-weight:700; display:inline-flex; align-items:center; justify-content:center;
+   transition:transform .12s ease, filter .12s ease, background .12s ease; }
+ .mp button:active{ transform:translateY(1px); }
+ .mp .pp{ width:42px; height:42px; border-radius:50%; background:#c2f23c; color:#0a0e13; font-size:1rem; }
+ .mp .pp:hover{ filter:brightness(1.07); }
+ .mp .stop{ width:34px; height:34px; background:#27333f; color:#eaf1f3; font-size:.82rem; }
+ .mp .stop:hover{ background:#33414f; }
+ .mp .bar{ flex:1; height:6px; background:rgba(255,255,255,.08); border-radius:4px;
+   overflow:hidden; cursor:pointer; }
+ .mp .fill{ height:100%; width:0; background:linear-gradient(90deg,#9ec62f,#c2f23c); }
+ .mp .tm{ font-size:.64rem; color:#8a99a6; font-variant-numeric:tabular-nums; min-width:32px;
+   text-align:right; }
+</style></head>
+<body>
+ <div class="mp">
+   <div class="ttl">🎵 Pa porra la mía</div>
+   <div class="sub">Lasa 2.0 · himno oficial</div>
+   <div class="ctr">
+     <button class="pp" id="pp" title="Reproducir / Pausar" aria-label="Reproducir o pausar">&#9658;</button>
+     <button class="stop" id="stp" title="Parar" aria-label="Parar">&#9632;</button>
+     <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+     <div class="tm" id="tm">0:00</div>
+   </div>
+   <audio id="au" src="__SONG_URL__" preload="none"></audio>
+ </div>
+<script>
+ const au=document.getElementById('au'), pp=document.getElementById('pp'),
+   stp=document.getElementById('stp'), fill=document.getElementById('fill'),
+   tm=document.getElementById('tm'), bar=document.getElementById('bar');
+ const f=s=>{ s=Math.floor(s||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+ pp.onclick=()=>{ if(au.paused){ au.play().catch(()=>{}); } else { au.pause(); } };
+ stp.onclick=()=>{ au.pause(); au.currentTime=0; };
+ au.onplay=()=>{ pp.innerHTML='&#10074;&#10074;'; };
+ au.onpause=()=>{ pp.innerHTML='&#9658;'; };
+ au.onended=()=>{ pp.innerHTML='&#9658;'; fill.style.width='0%'; tm.textContent='0:00'; };
+ au.ontimeupdate=()=>{ const d=au.duration||0; fill.style.width=(d?au.currentTime/d*100:0)+'%';
+   tm.textContent=f(au.currentTime); };
+ bar.onclick=e=>{ const r=bar.getBoundingClientRect(); const p=(e.clientX-r.left)/r.width;
+   if(au.duration){ au.currentTime=Math.max(0,Math.min(1,p))*au.duration; } };
+</script>
+</body></html>
+"""
+
+
+def render_music_player() -> None:
+    """Pinta el mini-reproductor del himno en la barra lateral (en todas las páginas).
+
+    No suena por defecto; el usuario decide reproducir, pausar o parar. Se llama
+    desde :func:`configure_page`, así que aparece bajo el menú de navegación.
+    """
+    import streamlit.components.v1 as components
+
+    with st.sidebar:
+        components.html(_MUSIC_HTML.replace("__SONG_URL__", _SONG_URL), height=118)
 
 
 def fmt(value: float) -> str:
