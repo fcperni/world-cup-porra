@@ -235,6 +235,11 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
   object-fit:cover; display:inline-block; }
 .fx-team .nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fx-team.ph .nm{ color:var(--muted); font-size:.92rem; font-family:'Saira',sans-serif; text-transform:none; }
+/* sede (ciudad · estadio): línea propia que ocupa todo el ancho de la fila;
+   se oculta en móvil (regla en el bloque @media 640px más abajo). */
+.fx-venue{ grid-column:1 / -1; font-family:'Saira',sans-serif; text-transform:uppercase;
+  letter-spacing:.05em; font-size:.62rem; color:var(--muted); text-align:center;
+  margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fx-score{ font-family:'Saira',sans-serif; font-weight:600; text-align:center;
   border-radius:8px; padding:5px 0; font-size:1.02rem; }
 .fx-score.played{ background:var(--lime); color:#0a0e13; }
@@ -261,6 +266,8 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 @media (max-width:640px){
   .fx-row{ grid-template-columns:1fr 58px 1fr; gap:8px; padding:8px 11px; }
   .fx-tag{ display:none; }
+  /* la sede no cabe legible en móvil: solo en escritorio */
+  .fx-venue{ display:none; }
   .fx-team{ font-size:1rem; }
   /* marcador en directo: apila el reloj bajo el marcador para no desbordar la columna */
   .fx-score.live{ flex-direction:column; gap:1px; padding:3px 2px; line-height:1.1; }
@@ -436,6 +443,9 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .prd-sc.pending{ color:var(--muted); border:1px solid var(--line); font-size:1.05rem; }
 .prd-sc.live{ background:rgba(255,90,60,.16); color:var(--coral); border:1px solid rgba(255,90,60,.5);
   display:inline-flex; align-items:center; gap:8px; }
+.prd-venue{ margin-top:.7rem; display:flex; align-items:center; justify-content:center; gap:6px;
+  font-family:'Saira',sans-serif; text-transform:uppercase; letter-spacing:.08em;
+  font-size:.68rem; color:var(--muted); }
 .prd-pen{ margin-top:.7rem; font-size:.82rem; color:var(--muted); text-align:center; }
 .prd-pen .fl-img{ vertical-align:middle; margin:0 2px; }
 .prd-live{ margin-top:.8rem; display:flex; align-items:center; justify-content:center; gap:8px;
@@ -503,6 +513,8 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
   .prd-sc{ font-size:1.2rem; padding:5px 11px; }
   .prd-sc.pending{ font-size:.95rem; }
   .prd-sc.live{ gap:6px; padding:5px 10px; }
+  /* la sede no cabe legible en móvil: solo en escritorio */
+  .prd-venue{ display:none; }
   [data-testid="stMetric"]{ padding:13px 14px 11px; }
   [data-testid="stMetricValue"]{ font-size:1.5rem; }
   .stTabs [data-baseweb="tab"]{ font-size:.95rem; letter-spacing:.03em; }

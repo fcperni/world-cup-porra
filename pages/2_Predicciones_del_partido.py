@@ -130,6 +130,10 @@ with safe_page():
             when = m.date.strftime("%H:%M") if m.date else "vs"
             sc_html = f'<span class="prd-sc pending">{when}</span>'
 
+        venue_html = ""
+        if m.city and m.stadium:
+            venue_html = f'<div class="prd-venue">📍 {m.city} · {m.stadium}</div>'
+
         st.markdown(
             f'<div class="prd-hd{esp}">'
             f'<div class="prd-tag">{m_tag(m)} · {long_day(m)}</div>'
@@ -137,7 +141,7 @@ with safe_page():
             f'<span class="t home"><span class="nm">{home}</span>{flag_img(home, 22)}</span>'
             f'{sc_html}'
             f'<span class="t away">{flag_img(away, 22)}<span class="nm">{away}</span></span>'
-            f'</div>{extra_html}</div>',
+            f'</div>{venue_html}{extra_html}</div>',
             unsafe_allow_html=True,
         )
 

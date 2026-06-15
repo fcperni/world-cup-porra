@@ -119,6 +119,9 @@ with safe_page():
             h, a, ph = names(m, teams)
             esp = " esp" if "España" in (h, a) else ""
             liv = " live" if m.number in live else ""
+            venue = ""
+            if m.city and m.stadium:
+                venue = f'<div class="fx-venue">📍 {m.city} · {m.stadium}</div>'
             html.append(
                 f'<a class="fx-row{esp}{liv}" href="Predicciones_del_partido?match={m.number}" '
                 f'target="_self" title="Ver las predicciones de este partido">'
@@ -126,6 +129,7 @@ with safe_page():
                 f'{team_html(h, "home", ph)}'
                 f'{score_html(m, results, live, teams)}'
                 f'{team_html(a, "away", ph)}'
+                f'{venue}'
                 "</a>"
             )
         html.append("</div>")
