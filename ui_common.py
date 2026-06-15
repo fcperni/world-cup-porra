@@ -240,6 +240,8 @@ _MUSIC_HTML = """
    font-weight:700; display:inline-flex; align-items:center; justify-content:center;
    transition:transform .12s ease, filter .12s ease, background .12s ease; }
  .mp button:active{ transform:translateY(1px); }
+ .mp button:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+ .mp .err{ display:none; color:#ff5a3c; font-size:.66rem; letter-spacing:.02em; margin-top:9px; }
  .mp .pp{ width:42px; height:42px; border-radius:50%; background:#c2f23c; color:#0a0e13; font-size:1rem; }
  .mp .pp:hover{ filter:brightness(1.07); }
  .mp .stop{ width:34px; height:34px; background:#27333f; color:#eaf1f3; font-size:.82rem; }
@@ -260,14 +262,20 @@ _MUSIC_HTML = """
      <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
      <div class="tm" id="tm">0:00</div>
    </div>
+   <div class="err" id="err">&#9888; Audio no disponible ahora mismo.</div>
    <audio id="au" src="__SONG_URL__" preload="none"></audio>
  </div>
 <script>
  const au=document.getElementById('au'), pp=document.getElementById('pp'),
    stp=document.getElementById('stp'), fill=document.getElementById('fill'),
-   tm=document.getElementById('tm'), bar=document.getElementById('bar');
+   tm=document.getElementById('tm'), bar=document.getElementById('bar'),
+   err=document.getElementById('err');
  const f=s=>{ s=Math.floor(s||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
- pp.onclick=()=>{ if(au.paused){ au.play().catch(()=>{}); } else { au.pause(); } };
+ // Fail-safe: si la canción no carga (404, Suno caído, red), avisa y desactiva.
+ function dead(){ err.style.display='block'; pp.disabled=true; stp.disabled=true;
+   pp.innerHTML='&#9658;'; fill.style.width='0%'; }
+ au.onerror=dead;
+ pp.onclick=()=>{ if(au.paused){ au.play().catch(dead); } else { au.pause(); } };
  stp.onclick=()=>{ au.pause(); au.currentTime=0; };
  au.onplay=()=>{ pp.innerHTML='&#10074;&#10074;'; };
  au.onpause=()=>{ pp.innerHTML='&#9658;'; };
@@ -281,16 +289,42 @@ _MUSIC_HTML = """
 """
 
 
+@st.cache_data(ttl=1800, show_spinner=False)
+def _song_available() -> bool:
+    """¿Responde el MP3 del himno? Fail-safe: cualquier fallo -> ``False``.
+
+    Cacheado 30 min para no pegarle a la CDN en cada recarga. Nunca propaga
+    excepción (red caída, timeout, DNS…): si el servicio de Suno no está o la
+    canción desapareció, devolvemos ``False`` y no se pinta el reproductor.
+    """
+    try:
+        import requests
+        r = requests.head(_SONG_URL, timeout=4, allow_redirects=True,
+                          headers={"User-Agent": "porra/1.0"})
+        return r.ok
+    except Exception:  # noqa: BLE001 — best-effort, no debe romper la app
+        return False
+
+
 def render_music_player() -> None:
     """Pinta el mini-reproductor del himno en la barra lateral (en todas las páginas).
 
     No suena por defecto; el usuario decide reproducir, pausar o parar. Se llama
     desde :func:`configure_page`, así que aparece bajo el menú de navegación.
-    """
-    import streamlit.components.v1 as components
 
-    with st.sidebar:
-        components.html(_MUSIC_HTML.replace("__SONG_URL__", _SONG_URL), height=118)
+    Doble red de seguridad para que nunca dé error si la canción desaparece o
+    Suno está caído: (1) si la comprobación de disponibilidad falla, no se
+    muestra el reproductor; (2) aun mostrándose, el ``<audio>`` avisa y se
+    desactiva solo si la reproducción falla.
+    """
+    try:
+        if not _song_available():
+            return
+        import streamlit.components.v1 as components
+        with st.sidebar:
+            components.html(_MUSIC_HTML.replace("__SONG_URL__", _SONG_URL), height=118)
+    except Exception:  # noqa: BLE001 — el reproductor es accesorio: nunca debe tumbar la página
+        pass
 
 
 def fmt(value: float) -> str:
