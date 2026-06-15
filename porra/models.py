@@ -62,8 +62,6 @@ class Match:
     date: Optional[datetime] = None
     bonus: int = 1                  # multiplicador de puntos (columna I de ADMIN)
     admin_row: Optional[int] = None # fila de ADMIN con las predicciones de este partido
-    city: Optional[str] = None      # ciudad sede (de porra.venues, por nº de partido)
-    stadium: Optional[str] = None   # estadio sede (de porra.venues, por nº de partido)
 
     @property
     def is_placeholder(self) -> bool:

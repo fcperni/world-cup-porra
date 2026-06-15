@@ -44,7 +44,6 @@ from .models import (
     Team,
     TournamentData,
 )
-from .venues import venue_for
 
 DEFAULT_XLSX = Path(__file__).resolve().parent.parent / "docs" / "ADMIN.xlsx"
 
@@ -189,11 +188,6 @@ def load_tournament(xlsx_path: Path | str = DEFAULT_XLSX) -> TournamentData:
     for m in matches:
         if m.phase is Phase.GROUPS:
             m.group = team_group.get(m.home, m.group)
-
-    # Sede (ciudad + estadio) por nº de partido: dato estático que no vive en el
-    # Excel (la numeración de la porra coincide con la oficial de la FIFA).
-    for m in matches:
-        m.city, m.stadium = venue_for(m.number)
 
     _attach_admin_metadata(wb_v["ADMIN"], wb_f["ADMIN"], matches, wc_row_to_num)
     players = _load_players(wb_v["ADMIN"], matches)

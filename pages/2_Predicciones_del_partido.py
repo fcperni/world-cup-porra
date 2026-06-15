@@ -21,6 +21,7 @@ with safe_page():
     from porra.models import Phase
     from porra.scoring import score_match
     from porra.tournament import resolved_match_teams
+    from porra.venues import venue_for
     from ui_common import (PHASE_LABELS, configure_page, fmt, get_data, get_live,
                            get_results, proper_name)
 
@@ -130,9 +131,10 @@ with safe_page():
             when = m.date.strftime("%H:%M") if m.date else "vs"
             sc_html = f'<span class="prd-sc pending">{when}</span>'
 
+        city, stadium = venue_for(m.number)
         venue_html = ""
-        if m.city and m.stadium:
-            venue_html = f'<div class="prd-venue">📍 {m.city} · {m.stadium}</div>'
+        if city and stadium:
+            venue_html = f'<div class="prd-venue">📍 {city} · {stadium}</div>'
 
         st.markdown(
             f'<div class="prd-hd{esp}">'
