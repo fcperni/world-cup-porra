@@ -77,7 +77,8 @@ with safe_page():
     # ----------------------------------------------------------------- filtros
     c1, c2 = st.columns([3, 1])
     choice = c1.radio("Fase", ["Todas", "Grupos", "Eliminatorias"], horizontal=True, label_visibility="collapsed")
-    only_played = c2.toggle("Solo jugados")
+    estado = c2.radio("Estado", ["Todos", "Solo jugados", "Solo por jugar"],
+                      horizontal=False, label_visibility="collapsed")
 
     # Si hay partidos en juego al cargar, el bloque de partidos se autorrefresca.
     live_at_load = get_live(get_results())
@@ -103,8 +104,10 @@ with safe_page():
             matches = [m for m in matches if m.phase is Phase.GROUPS]
         elif choice == "Eliminatorias":
             matches = [m for m in matches if m.phase.is_knockout]
-        if only_played:
+        if estado == "Solo jugados":
             matches = [m for m in matches if results.has(m.number)]
+        elif estado == "Solo por jugar":
+            matches = [m for m in matches if not results.has(m.number)]
 
         if not matches:
             st.info("No hay partidos que mostrar con este filtro.")
