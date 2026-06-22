@@ -12,7 +12,12 @@ with safe_page():
     import analytics
     from porra.flags import flag_img
     from porra.models import Phase
-    from porra.tournament import compute_group_standings, qualified_thirds_groups, resolved_match_teams
+    from porra.tournament import (
+        clinched_knockout,
+        compute_group_standings,
+        qualified_thirds_groups,
+        resolved_match_teams,
+    )
     from ui_common import configure_page, get_data, get_results
 
     configure_page()
@@ -33,6 +38,10 @@ with safe_page():
         group_played = any(results.has(m.number) for m in data.matches if m.phase is Phase.GROUPS)
         # grupos cuyo 3º clasifica (provisional mientras se juega; vacío sin resultados)
         best_thirds = set(qualified_thirds_groups(standings)) if group_played else set()
+        # selecciones con la clasificación a dieciseisavos ya asegurada (✓)
+        clinched = clinched_knockout(data, results, standings)
+        if clinched:
+            st.caption(f"✓ = clasificación matemáticamente asegurada ({len(clinched)} selecciones).")
         cards = []
         for group, ranked in standings.items():
             body = []
@@ -41,9 +50,10 @@ with safe_page():
                 if r.team.name == "España":
                     cls = (cls + " esp").strip()
                 dg = f"+{r.gd}" if r.gd > 0 else str(r.gd)
+                tick = '<span class="qtick">✓</span>' if r.team.name in clinched else ""
                 body.append(
                     f'<tr class="{cls}"><td class="pos">{pos}</td>'
-                    f'<td class="sel">{flag_img(r.team.name, 13)}<span class="nm">{r.team.name}</span></td>'
+                    f'<td class="sel">{flag_img(r.team.name, 13)}<span class="nm">{r.team.name}</span>{tick}</td>'
                     f'<td class="pts">{r.points}</td><td>{r.played}</td>'
                     f'<td>{r.gf}</td><td>{r.ga}</td><td>{dg}</td></tr>'
                 )
@@ -61,6 +71,25 @@ with safe_page():
             "ganadores) conforme avanzan las rondas; lo aún no determinado aparece como "
             "su referencia (W74, 3ABCDF…). Desliza en horizontal para ver todas las rondas."
         )
+
+        # selecciones con el pase a dieciseisavos ya asegurado (top-2 garantizado)
+        clinched = clinched_knockout(data, results, standings)
+        if clinched:
+            grp_of = {t.name: t.group for t in data.teams}
+            chips = "".join(
+                f'<span class="qchip">{flag_img(n, 13)}<span class="nm">{n}</span>'
+                f'<span class="g">{grp_of.get(n, "")}</span></span>'
+                for n in sorted(clinched, key=lambda n: (grp_of.get(n, ""), n))
+            )
+            st.markdown(
+                '<div class="qual-panel"><div class="qual-h">Ya clasificadas a dieciseisavos '
+                f'<span class="qn">{len(clinched)}</span></div>'
+                f'<div class="qual-chips">{chips}</div>'
+                '<div class="qual-note">Pase matemáticamente asegurado (1º o 2º de grupo, '
+                'pase lo que pase en los partidos que faltan).</div></div>',
+                unsafe_allow_html=True,
+            )
+
         teams = resolved_match_teams(data, results)
         SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4", Phase.SF: "1/2", Phase.FINAL: "Final"}
         DEPTH_PHASE = {0: Phase.FINAL, 1: Phase.SF, 2: Phase.QF, 3: Phase.R16, 4: Phase.R32}

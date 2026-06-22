@@ -7,6 +7,7 @@ La resolución del cuadro de eliminatorias (mejores terceros, propagación
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import product
 
 from .models import Match, Phase, Team, TournamentData
 from .results_store import Results
@@ -140,6 +141,71 @@ def qualified_thirds_groups(standings: dict[str, list[GroupRow]]) -> list[str]:
     """Letras de los 8 grupos cuyos terceros se clasifican, ordenadas alfabéticamente."""
     best8 = third_place_ranking(standings)[:8]
     return sorted(g for g, _ in best8)
+
+
+def clinched_knockout(data: TournamentData, results: Results,
+                      standings: dict[str, list[GroupRow]] | None = None) -> set[str]:
+    """Nombres de selecciones con la clasificación a dieciseisavos **asegurada**.
+
+    Es una condición *suficiente* (nunca da falsos positivos): incluye a quien
+    tiene garantizado el **top-2** de su grupo sea cual sea el resultado de los
+    partidos que faltan, y —cuando los 12 grupos están completos— a los **8
+    mejores terceros**. No intenta anticipar terceros con grupos incompletos
+    (exigiría resolver las 12 tablas a la vez), así que ahí puede quedarse corta,
+    nunca pasarse.
+
+    Top-2 garantizado: para cada selección ``T`` se toma su peor caso (pierde todo
+    lo que le queda, lo que además da 3 puntos a sus rivales) y se enumeran los
+    resultados (1/X/2) de los demás partidos del grupo. Si en **algún** escenario
+    dos o más rivales alcanzan los puntos de ``T`` (un empate a puntos podría
+    dejarla 3ª por desempate), no está asegurada.
+    """
+    if standings is None:
+        standings = compute_group_standings(data, results)
+    group_matches = [m for m in data.matches if m.phase is Phase.GROUPS]
+    complete = _complete_groups(data, results)
+    clinched: set[str] = set()
+
+    for group, ranked in standings.items():
+        names = [r.team.name for r in ranked]
+        current = {r.team.name: r.points for r in ranked}
+        remaining = [m for m in group_matches
+                     if m.group == group and not results.has(m.number)]
+        if not remaining:  # grupo completo: los dos primeros están dentro
+            clinched.update(names[:2])
+            continue
+
+        for team in names:
+            own = [m for m in remaining if team in (m.home, m.away)]
+            others = [m for m in remaining if team not in (m.home, m.away)]
+            base = dict(current)
+            for m in own:  # peor caso para 'team': pierde y el rival suma 3
+                base[m.away if m.home == team else m.home] += 3
+
+            safe = True
+            for combo in product(("home", "draw", "away"), repeat=len(others)):
+                pts = dict(base)
+                for m, outcome in zip(others, combo):
+                    if outcome == "home":
+                        pts[m.home] += 3
+                    elif outcome == "away":
+                        pts[m.away] += 3
+                    else:
+                        pts[m.home] += 1
+                        pts[m.away] += 1
+                threats = sum(1 for n in names if n != team and pts[n] >= pts[team])
+                if threats >= 2:  # dos rivales podrían quedar por delante -> 3ª o peor
+                    safe = False
+                    break
+            if safe:
+                clinched.add(team)
+
+    if len(complete) == 12:  # terceros decididos solo con todos los grupos jugados
+        for g in qualified_thirds_groups(standings):
+            if len(standings.get(g, [])) >= 3:
+                clinched.add(standings[g][2].team.name)
+
+    return clinched
 
 
 def resolve_bracket(data: TournamentData, results: Results,

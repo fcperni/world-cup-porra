@@ -6,6 +6,7 @@ from porra.excel_loader import load_tournament
 from porra.models import Phase
 from porra.results_store import Results
 from porra.tournament import (
+    clinched_knockout,
     compute_group_standings,
     qualified_thirds_groups,
     resolve_bracket,
@@ -107,6 +108,44 @@ def test_third_slot_comes_from_listed_group(data):
             if token.startswith("3") and len(token) > 2 and token in resolved:
                 allowed = set(token[1:])  # letras del código, p.ej. {A,B,C,D,F}
                 assert resolved[token].group in allowed
+
+
+def test_clinched_empty_without_results(data):
+    assert clinched_knockout(data, Results()) == set()
+
+
+def test_clinched_full_groups_are_the_32(data):
+    res = Results()
+    _fill_groups(data, res)
+    st = compute_group_standings(data, res)
+    expected = {r.team.name for ranked in st.values() for r in ranked[:2]}
+    expected |= {st[g][2].team.name for g in qualified_thirds_groups(st)}
+    clinched = clinched_knockout(data, res, st)
+    assert len(expected) == 32
+    assert clinched == expected
+
+
+def test_clinched_top2_when_two_rivals_cannot_both_catch(data):
+    """México gana J1 y J2 (6 pts) y, en J3, ningún rival puede alcanzarlo."""
+    res = Results()
+    res.set_match(1, 2, 0)   # México 2-0 Sudáfrica
+    res.set_match(28, 2, 0)  # México 2-0 Corea del Sur  -> México 6 pts
+    res.set_match(2, 0, 0)   # Corea 0-0 Chequia
+    res.set_match(25, 0, 0)  # Chequia 0-0 Sudáfrica
+    # restan #53 Chequia-México y #54 Sudáfrica-Corea; nadie llega a 6
+    clinched = clinched_knockout(data, res)
+    assert clinched == {"México"}
+
+
+def test_not_clinched_when_two_rivals_can_both_catch(data):
+    """Mismo líder a 6, pero dos rivales pueden llegar a 6 en J3: no asegurado."""
+    res = Results()
+    res.set_match(1, 2, 0)   # México 2-0 Sudáfrica
+    res.set_match(28, 2, 0)  # México 2-0 Corea del Sur  -> México 6 pts
+    res.set_match(2, 1, 0)   # Corea 1-0 Chequia  -> Corea 3
+    res.set_match(25, 1, 0)  # Chequia 1-0 Sudáfrica -> Chequia 3
+    # #53 Chequia-México y #54 Sudáfrica-Corea: Corea y Chequia podrían llegar a 6
+    assert clinched_knockout(data, res) == set()
 
 
 def test_ko_winner_by_penalties(data):
