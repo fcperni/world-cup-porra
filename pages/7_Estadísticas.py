@@ -78,13 +78,14 @@ with safe_page():
         icon = "✅" if hit else "❌"
         return f'<span class="res {cls}">{icon} {rh}-{ra}</span>'
 
-    def rank_matches(splits, fmt) -> str:
+    def rank_matches(splits, fmt, show_result: bool = True) -> str:
         items = []
         for i, s in enumerate(splits, 1):
             m = data.match_by_number(s.match_number)
+            res = _match_result_label(s) if show_result else ""
             items.append(f'<div class="rank-item"><span class="n">{i}</span>'
                          f'<span class="who">{flag_img(m.home, 13)}<span>{m.home} · {m.away}</span>'
-                         f'{_match_result_label(s)}</span>'
+                         f'{res}</span>'
                          f'<span class="v">{fmt(s)}</span></div>')
         return '<div class="rank-list">' + "".join(items) + "</div>"
 
@@ -184,7 +185,8 @@ with safe_page():
         with colA:
             st.caption("Partidos más **reñidos**")
             st.markdown(
-                rank_matches(most_div, lambda s: f"{s.counts['1']}·{s.counts['X']}·{s.counts['2']}"),
+                rank_matches(most_div, lambda s: f"{s.counts['1']}·{s.counts['X']}·{s.counts['2']}",
+                             show_result=False),
                 unsafe_allow_html=True)
         with colB:
             st.caption("Partidos más **claros**")
