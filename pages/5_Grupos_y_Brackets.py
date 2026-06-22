@@ -67,28 +67,12 @@ with safe_page():
 
     with tab_brackets:
         st.caption(
-            "El cuadro se rellena con las selecciones reales (mejores terceros y "
-            "ganadores) conforme avanzan las rondas; lo aún no determinado aparece como "
-            "su referencia (W74, 3ABCDF…). Desliza en horizontal para ver todas las rondas."
+            "El cuadro se rellena con las selecciones reales conforme se aseguran: una "
+            "posición aparece (p.ej. **1E → Alemania**) en cuanto es matemáticamente "
+            "definitiva, aunque el grupo no haya terminado. Lo aún no determinado se "
+            "muestra como su referencia (W74, 3ABCDF…). Desliza en horizontal para ver "
+            "todas las rondas."
         )
-
-        # selecciones con el pase a dieciseisavos ya asegurado (top-2 garantizado)
-        clinched = clinched_knockout(data, results, standings)
-        if clinched:
-            grp_of = {t.name: t.group for t in data.teams}
-            chips = "".join(
-                f'<span class="qchip">{flag_img(n, 13)}<span class="nm">{n}</span>'
-                f'<span class="g">{grp_of.get(n, "")}</span></span>'
-                for n in sorted(clinched, key=lambda n: (grp_of.get(n, ""), n))
-            )
-            st.markdown(
-                '<div class="qual-panel"><div class="qual-h">Ya clasificadas a dieciseisavos '
-                f'<span class="qn">{len(clinched)}</span></div>'
-                f'<div class="qual-chips">{chips}</div>'
-                '<div class="qual-note">Pase matemáticamente asegurado (1º o 2º de grupo, '
-                'pase lo que pase en los partidos que faltan).</div></div>',
-                unsafe_allow_html=True,
-            )
 
         teams = resolved_match_teams(data, results)
         SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4", Phase.SF: "1/2", Phase.FINAL: "Final"}

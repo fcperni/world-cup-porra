@@ -8,6 +8,7 @@ from porra.results_store import Results
 from porra.tournament import (
     clinched_knockout,
     compute_group_standings,
+    locked_group_positions,
     qualified_thirds_groups,
     resolve_bracket,
     resolved_match_teams,
@@ -108,6 +109,52 @@ def test_third_slot_comes_from_listed_group(data):
             if token.startswith("3") and len(token) > 2 and token in resolved:
                 allowed = set(token[1:])  # letras del código, p.ej. {A,B,C,D,F}
                 assert resolved[token].group in allowed
+
+
+def test_tiebreak_head_to_head_before_goal_difference(data):
+    """Regla FIFA 2026: a igualdad de puntos manda el directo, no la DG general.
+
+    México y Corea acaban a 4 pts; México tiene PEOR DG (-3 vs -1) pero ganó el
+    cara a cara (2-0), así que debe quedar por delante.
+    """
+    res = Results()
+    res.set_match(1, 0, 5)    # México 0-5 Sudáfrica
+    res.set_match(28, 2, 0)   # México 2-0 Corea del Sur  (directo a favor de México)
+    res.set_match(53, 1, 1)   # Chequia 1-1 México
+    res.set_match(2, 1, 0)    # Corea 1-0 Chequia
+    res.set_match(25, 0, 2)   # Chequia 0-2 Sudáfrica
+    res.set_match(54, 0, 0)   # Sudáfrica 0-0 Corea
+    order = [r.team.name for r in compute_group_standings(data, res)["A"]]
+    assert order.index("México") < order.index("Corea del Sur")
+
+
+def test_locked_position_first_via_head_to_head(data):
+    """México asegura el 1º del grupo A: el único rival que puede empatarle a
+    puntos (Corea) ya perdió el cara a cara, así que la DG es irrelevante."""
+    res = Results()
+    res.set_match(1, 2, 0)    # México 2-0 Sudáfrica
+    res.set_match(28, 2, 0)   # México 2-0 Corea  -> México 6 pts y directo ganado
+    res.set_match(2, 1, 0)    # Corea 1-0 Chequia -> Corea 3 (puede llegar a 6)
+    res.set_match(25, 0, 0)   # Chequia 0-0 Sudáfrica
+    locked = locked_group_positions(data, res)
+    assert locked.get(("A", 1)) is not None
+    assert locked[("A", 1)].name == "México"
+    assert ("A", 2) not in locked  # el 2º sigue abierto
+
+
+def test_locked_positions_empty_without_results(data):
+    assert locked_group_positions(data, Results()) == {}
+
+
+def test_locked_positions_full_groups_match_standings(data):
+    res = Results()
+    _fill_groups(data, res)
+    st = compute_group_standings(data, res)
+    locked = locked_group_positions(data, res, st)
+    assert len(locked) == 12 * 4  # con todos los grupos cerrados, las 4 posiciones
+    for group, ranked in st.items():
+        for pos, row in enumerate(ranked, 1):
+            assert locked[(group, pos)].name == row.team.name
 
 
 def test_clinched_empty_without_results(data):

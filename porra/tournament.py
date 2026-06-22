@@ -67,9 +67,11 @@ def _head_to_head(tied: list[GroupRow], group_matches: list[Match], results: Res
 def compute_group_standings(data: TournamentData, results: Results) -> dict[str, list[GroupRow]]:
     """Devuelve, por grupo, la lista de :class:`GroupRow` ordenada (1º…4º).
 
-    Criterios de desempate (cascada del Excel): puntos → diferencia de goles →
-    goles a favor → enfrentamiento directo (puntos/DG/GF entre los empatados) →
-    ranking FIFA (``Team.rank``, menor es mejor; desempate determinista final).
+    Criterios de desempate (**reglas FIFA 2026**, Art. 13 — el enfrentamiento
+    directo va ahora ANTES que la diferencia de goles general): puntos →
+    enfrentamiento directo (puntos → DG → GF entre las empatadas) → DG general →
+    GF general → *fair play* (sin datos, se omite) → ranking FIFA (``Team.rank``,
+    menor es mejor; desempate determinista final).
     """
     group_matches = [m for m in data.matches if m.phase is Phase.GROUPS]
     standings: dict[str, list[GroupRow]] = {}
@@ -86,24 +88,53 @@ def compute_group_standings(data: TournamentData, results: Results) -> dict[str,
     return standings
 
 
-def _rank_group(rows: list[GroupRow], group_matches: list[Match], results: Results) -> list[GroupRow]:
-    # 1ª pasada: puntos, DG, GF
-    rows.sort(key=lambda r: (r.points, r.gd, r.gf), reverse=True)
+def _overall_order(block: list[GroupRow]) -> list[GroupRow]:
+    """Criterios generales (5-7): DG general → GF general → ranking FIFA."""
+    block.sort(key=lambda r: (r.gd, r.gf, -r.team.rank), reverse=True)
+    return block
 
-    # resolver empates (mismo puntos/DG/GF) por enfrentamiento directo y ranking FIFA
+
+def _break_tie(block: list[GroupRow], group_matches: list[Match], results: Results) -> list[GroupRow]:
+    """Ordena un bloque empatado a puntos según las reglas FIFA 2026.
+
+    Aplica primero el enfrentamiento directo (puntos → DG → GF entre las
+    empatadas); si separa el bloque en subgrupos, **reaplica** el directo a cada
+    subgrupo (la mini-tabla cambia al quitar equipos); lo que el directo no
+    desempata pasa a los criterios generales (DG/GF general, ranking).
+    """
+    if len(block) == 1:
+        return block
+    h2h = _head_to_head(block, group_matches, results)
+    block.sort(key=lambda r: h2h[r.team.name], reverse=True)
+
+    subgroups: list[list[GroupRow]] = []
+    i = 0
+    while i < len(block):
+        j = i + 1
+        while j < len(block) and h2h[block[j].team.name] == h2h[block[i].team.name]:
+            j += 1
+        subgroups.append(block[i:j])
+        i = j
+
+    if len(subgroups) == 1:  # el directo no separó a nadie -> criterios generales
+        return _overall_order(block)
+
+    result: list[GroupRow] = []
+    for sub in subgroups:  # cada subgrupo es estrictamente menor -> recursión finita
+        result.extend(_break_tie(sub, group_matches, results) if len(sub) > 1 else sub)
+    return result
+
+
+def _rank_group(rows: list[GroupRow], group_matches: list[Match], results: Results) -> list[GroupRow]:
+    rows.sort(key=lambda r: r.points, reverse=True)  # 1er criterio: puntos
     result: list[GroupRow] = []
     i = 0
     while i < len(rows):
         j = i + 1
-        base = (rows[i].points, rows[i].gd, rows[i].gf)
-        while j < len(rows) and (rows[j].points, rows[j].gd, rows[j].gf) == base:
+        while j < len(rows) and rows[j].points == rows[i].points:
             j += 1
         block = rows[i:j]
-        if len(block) > 1:
-            h2h = _head_to_head(block, group_matches, results)
-            block.sort(key=lambda r: (h2h[r.team.name][0], h2h[r.team.name][1],
-                                       h2h[r.team.name][2], -r.team.rank), reverse=True)
-        result.extend(block)
+        result.extend(_break_tie(block, group_matches, results) if len(block) > 1 else block)
         i = j
     return result
 
@@ -208,6 +239,86 @@ def clinched_knockout(data: TournamentData, results: Results,
     return clinched
 
 
+def locked_group_positions(data: TournamentData, results: Results,
+                           standings: dict[str, list[GroupRow]] | None = None,
+                           ) -> dict[tuple[str, int], Team]:
+    """``{(grupo, posición 1-4): Team}`` solo para las posiciones ya **aseguradas**.
+
+    Una posición está asegurada cuando la selección la ocupa en **cualquier**
+    combinación de resultados (1/X/2) de los partidos que faltan del grupo. La
+    decisión usa solo los criterios que no dependen de los goles que aún se pueden
+    marcar: **puntos** y **enfrentamiento directo a puntos** (reglas FIFA 2026,
+    donde el directo va antes que la DG). Lo que quedaría por desempatar por DG/GF
+    se considera abierto —los goles restantes podrían cambiarlo—, así que la
+    función puede quedarse corta, nunca pasarse (sin falsos positivos).
+    """
+    if standings is None:
+        standings = compute_group_standings(data, results)
+    complete = _complete_groups(data, results)
+    locked: dict[tuple[str, int], Team] = {}
+
+    for group, ranked in standings.items():
+        team_by_name = {r.team.name: r.team for r in ranked}
+        names = list(team_by_name)
+        if group in complete:  # grupo cerrado: las cuatro posiciones son definitivas
+            for pos, r in enumerate(ranked, 1):
+                locked[(group, pos)] = r.team
+            continue
+
+        grp_matches = [m for m in data.matches if m.phase is Phase.GROUPS and m.group == group]
+        played = [m for m in grp_matches if results.has(m.number)]
+        remaining = [m for m in grp_matches if not results.has(m.number)]
+        base_pts = {r.team.name: r.points for r in ranked}
+
+        # rango de posición (mejor, peor) de cada selección sobre todos los escenarios
+        best = {n: len(names) for n in names}
+        worst = {n: 1 for n in names}
+        for combo in product(("home", "draw", "away"), repeat=len(remaining)):
+            outcome: dict[int, str] = {}
+            for m in played:
+                hg, ag = results.goals(m.number)
+                outcome[m.number] = "home" if hg > ag else "away" if hg < ag else "draw"
+            pts = dict(base_pts)
+            for m, o in zip(remaining, combo):
+                outcome[m.number] = o
+                if o == "home":
+                    pts[m.home] += 3
+                elif o == "away":
+                    pts[m.away] += 3
+                else:
+                    pts[m.home] += 1
+                    pts[m.away] += 1
+
+            for team in names:
+                block = [n for n in names if pts[n] == pts[team]]  # empatadas a puntos (incl. team)
+                above = sum(1 for n in names if pts[n] > pts[team])
+                if len(block) > 1:  # desempate a puntos en el enfrentamiento directo
+                    h2h = {n: 0 for n in block}
+                    for m in grp_matches:
+                        if m.home in block and m.away in block and m.number in outcome:
+                            o = outcome[m.number]
+                            if o == "home":
+                                h2h[m.home] += 3
+                            elif o == "away":
+                                h2h[m.away] += 3
+                            else:
+                                h2h[m.home] += 1
+                                h2h[m.away] += 1
+                    above += sum(1 for n in block if n != team and h2h[n] > h2h[team])
+                    # empatadas también en el directo a puntos: orden abierto (depende de la DG)
+                    undecided = sum(1 for n in block if h2h[n] == h2h[team])
+                else:
+                    undecided = 1
+                best[team] = min(best[team], above + 1)
+                worst[team] = max(worst[team], above + undecided)
+
+        for team in names:
+            if best[team] == worst[team]:
+                locked[(group, best[team])] = team_by_name[team]
+
+    return locked
+
+
 def resolve_bracket(data: TournamentData, results: Results,
                     standings: dict[str, list[GroupRow]] | None = None) -> dict[str, Team]:
     """Resuelve los placeholders del cuadro (``1A``, ``3ABCDF``, ``W74``…) a selecciones.
@@ -220,11 +331,10 @@ def resolve_bracket(data: TournamentData, results: Results,
     complete = _complete_groups(data, results)
     resolved: dict[str, Team] = {}
 
-    # posiciones de grupo (definitivas cuando el grupo está completo)
-    for g, ranked in standings.items():
-        if g in complete:
-            for pos, row in enumerate(ranked, 1):
-                resolved[f"{pos}{g}"] = row.team
+    # posiciones de grupo ya aseguradas (con el grupo cerrado, las cuatro; antes,
+    # las que sean matemáticamente definitivas — p.ej. el 1º si ganó el directo)
+    for (g, pos), team in locked_group_positions(data, results, standings).items():
+        resolved[f"{pos}{g}"] = team
 
     # mejores terceros (requiere los 12 grupos completos)
     if len(complete) == 12 and data.thirds_table:

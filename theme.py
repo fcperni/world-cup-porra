@@ -303,24 +303,8 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .bk-third .bk-side.win .nm, .bk-third .bk-side.win .sc{ color:var(--gold); }
 .bk-third .bk-side.win{ background:rgba(243,196,75,.1); }
 
-/* ---------- selecciones ya clasificadas (top-2 asegurado) ---------- */
-/* check junto al nombre en la tabla de grupos */
+/* ---------- selecciones ya clasificadas (top-2 asegurado): check en la tabla ---------- */
 .grp-t td.sel .qtick{ color:var(--lime); font-weight:800; margin-left:6px; font-size:.82rem; }
-/* panel-resumen en la pestaña de Eliminatorias */
-.qual-panel{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
-  border:1px solid var(--line); border-left:3px solid var(--lime); border-radius:13px;
-  padding:13px 16px 14px; box-shadow:var(--shadow); margin-bottom:1.1rem; }
-.qual-h{ font-family:'Saira',sans-serif; text-transform:uppercase; letter-spacing:.12em;
-  font-size:.78rem; font-weight:800; color:var(--lime); display:flex; align-items:center; gap:9px; }
-.qual-h .qn{ font-variant-numeric:tabular-nums; background:var(--lime); color:#0a0e13;
-  border-radius:6px; padding:0 8px; font-size:.8rem; }
-.qual-chips{ display:flex; flex-wrap:wrap; gap:7px; margin:11px 0 9px; }
-.qchip{ display:inline-flex; align-items:center; gap:7px; padding:4px 11px; border-radius:999px;
-  background:var(--surface2); border:1px solid rgba(194,242,60,.4);
-  font-family:'Saira',sans-serif; text-transform:uppercase; font-size:.82rem; letter-spacing:.01em; }
-.qchip .fl-img{ vertical-align:middle; }
-.qchip .g{ color:var(--lime); font-weight:800; font-size:.7rem; }
-.qual-note{ color:var(--muted); font-size:.8rem; }
 
 /* ---------- cifras tabulares (marcadores, puntos, posiciones) ---------- */
 [data-testid="stMetricValue"], .board-row .rank, .board-row .pts,
