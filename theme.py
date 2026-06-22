@@ -374,6 +374,10 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .rank-item .who{ display:flex; align-items:center; gap:9px; text-transform:uppercase; font-weight:700;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rank-item .v{ font-variant-numeric:tabular-nums; font-weight:800; color:var(--lime); }
+.rank-item .res{ font-variant-numeric:tabular-nums; font-weight:700; font-size:.8rem;
+  padding:1px 7px; border-radius:999px; white-space:nowrap; flex:none; }
+.rank-item .res-hit{ color:var(--lime); background:rgba(190,242,100,.12); }
+.rank-item .res-miss{ color:var(--coral); background:rgba(255,107,107,.12); }
 
 /* ---------- curiosidades (consenso de pronósticos por partido) ---------- */
 .cz{ display:flex; flex-direction:column; gap:9px; }

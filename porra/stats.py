@@ -83,7 +83,10 @@ def team_furthest_round_votes(data: TournamentData, team: str) -> dict[str, int]
 
 def team_accuracy(data: TournamentData, results: Results) -> dict[str, tuple[float, int]]:
     """Por selección: (puntos medios por pronóstico, nº de pronósticos) en sus
-    partidos de grupo ya jugados, agregando a los 19 jugadores."""
+    partidos de grupo ya jugados, agregando a los 19 jugadores.
+
+    Se ignora el multiplicador de ronda (``bonus=1``): todos los partidos se
+    valoran con el mismo criterio para que las selecciones sean comparables."""
     agg: dict[str, list[float]] = {}
     for m in data.matches:
         if m.phase is not Phase.GROUPS or not results.has(m.number):
@@ -94,7 +97,7 @@ def team_accuracy(data: TournamentData, results: Results) -> dict[str, tuple[flo
             pred = p.group_matches.get(m.number)
             if not pred or not pred.valid:
                 continue
-            pts = score_match(data.rules, Phase.GROUPS, m.bonus,
+            pts = score_match(data.rules, Phase.GROUPS, 1,
                               pred.sign, pred.home_goals, pred.away_goals, asign, ah, aa)
             for team in (m.home, m.away):
                 agg.setdefault(team, [0.0, 0])
@@ -104,7 +107,10 @@ def team_accuracy(data: TournamentData, results: Results) -> dict[str, tuple[flo
 
 
 def match_accuracy(data: TournamentData, results: Results) -> dict[int, float]:
-    """Por partido de grupo jugado: puntos medios obtenidos por los jugadores."""
+    """Por partido de grupo jugado: puntos medios obtenidos por los jugadores.
+
+    Se ignora el multiplicador de ronda (``bonus=1``): todos los partidos se
+    valoran con el mismo criterio para que sean comparables entre sí."""
     out: dict[int, float] = {}
     for m in data.matches:
         if m.phase is not Phase.GROUPS or not results.has(m.number):
@@ -115,7 +121,7 @@ def match_accuracy(data: TournamentData, results: Results) -> dict[int, float]:
         for p in data.players:
             pred = p.group_matches.get(m.number)
             if pred and pred.valid:
-                pts.append(score_match(data.rules, Phase.GROUPS, m.bonus,
+                pts.append(score_match(data.rules, Phase.GROUPS, 1,
                                        pred.sign, pred.home_goals, pred.away_goals, asign, ah, aa))
         if pts:
             out[m.number] = sum(pts) / len(pts)

@@ -67,12 +67,24 @@ with safe_page():
                          f'<span class="v">{fmt(v)}</span></div>')
         return '<div class="rank-list">' + "".join(items) + "</div>"
 
+    def _match_result_label(s) -> str:
+        """Resultado real del partido si ya se jugó: signo mayoritario vs. lo ocurrido."""
+        if not results.has(s.match_number):
+            return ""
+        rh, ra = results.goals(s.match_number)
+        rsign = results.sign(s.match_number)
+        hit = s.majority_sign == rsign
+        cls = "res-hit" if hit else "res-miss"
+        icon = "✅" if hit else "❌"
+        return f'<span class="res {cls}">{icon} {rh}-{ra}</span>'
+
     def rank_matches(splits, fmt) -> str:
         items = []
         for i, s in enumerate(splits, 1):
             m = data.match_by_number(s.match_number)
             items.append(f'<div class="rank-item"><span class="n">{i}</span>'
-                         f'<span class="who">{flag_img(m.home, 13)}<span>{m.home} · {m.away}</span></span>'
+                         f'<span class="who">{flag_img(m.home, 13)}<span>{m.home} · {m.away}</span>'
+                         f'{_match_result_label(s)}</span>'
                          f'<span class="v">{fmt(s)}</span></div>')
         return '<div class="rank-list">' + "".join(items) + "</div>"
 
