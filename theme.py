@@ -181,6 +181,27 @@ button[kind*="secondary"]:hover *, button[data-testid*="secondary"]:hover *{ col
 .board.cold .board-row .bar{ background:linear-gradient(90deg,#b5331f,var(--coral)); }
 .board.cold .board-row.last{ border-color:rgba(255,90,60,.5); box-shadow:0 0 0 1px rgba(255,90,60,.18), var(--shadow); }
 
+/* Farolillo rojo del último: hover sobre el 🏮 saca su "avatar" inventado (bocadillo) */
+.lantern{ position:relative; display:inline-block; margin-left:8px; cursor:help;
+  font-size:1.05rem; vertical-align:middle; line-height:1; }
+.lantern .avatar-pop{
+  position:absolute; left:50%; bottom:calc(100% + 11px); transform:translateX(-50%) scale(.82);
+  transform-origin:bottom center; width:max-content; max-width:230px;
+  opacity:0; visibility:hidden; pointer-events:none; z-index:40;
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  background:linear-gradient(165deg,var(--surface2) 0%, var(--ink2) 100%);
+  border:1px solid rgba(255,90,60,.55); border-radius:14px; padding:13px 16px;
+  box-shadow:var(--shadow);
+  transition:opacity .17s ease, transform .17s cubic-bezier(.2,.7,.2,1), visibility .17s; }
+.lantern:hover .avatar-pop{ opacity:1; visibility:visible; transform:translateX(-50%) scale(1); }
+.lantern .avatar-pop::after{ content:''; position:absolute; top:100%; left:50%;
+  transform:translateX(-50%); border:7px solid transparent; border-top-color:rgba(255,90,60,.55); }
+.lantern .av-emoji{ font-size:2.7rem; line-height:1;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); animation:lantern-pop .25s ease both; }
+.lantern .av-cap{ font-family:'Saira',sans-serif; text-transform:none; letter-spacing:.005em;
+  font-size:.84rem; font-weight:600; color:var(--text); text-align:center; }
+@keyframes lantern-pop{ from{ transform:scale(.4) rotate(-12deg); } to{ transform:none; } }
+
 .medal{ font-size:1.1rem; }
 @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
 

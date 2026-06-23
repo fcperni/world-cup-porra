@@ -14,6 +14,8 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    import random
+
     import analytics
     from porra.models import Phase
     from porra.scoring import scoreboard
@@ -81,15 +83,40 @@ with safe_page():
             bottom = ranked[-5:]
             start = n - len(bottom) + 1
             st.markdown('<div class="section-label">Farolillos rojos</div>', unsafe_allow_html=True)
+            # Avatar "inventado" del último: al hacer hover sobre su farolillo 🏮 sale
+            # una estampa graciosa y emblemática (emoji grande + pulla), aleatoria por carga.
+            LANTERN_AVATARS = [
+                ("🐢", "Llegando a meta… el año que viene"),
+                ("🦤", "Oficialmente extinto en la tabla"),
+                ("🥄", "Cuchara de palo, premio al farolillo"),
+                ("🤡", "El espectáculo está asegurado"),
+                ("🐌", "Compitiendo a su propio ritmo"),
+                ("💩", "Pleno de fallos, sin despeinarse"),
+                ("🧂", "Le echa sal a cada pronóstico"),
+                ("🪦", "Aquí yacen sus predicciones"),
+                ("🫠", "Derritiéndose en el fondo de la tabla"),
+                ("🚑", "Necesita rescate clasificatorio urgente"),
+                ("🦨", "Apesta a porra… pero con cariño"),
+                ("🐔", "Se le escapó hasta el gol cantado"),
+            ]
             brows = []
             for j, s in enumerate(bottom):
                 pos = start + j
                 pct = max(6, round(s.total / maxpts * 100))
                 last = " last" if pos == n else ""
+                lantern = ""
+                if pos == n:
+                    emoji, cap = random.choice(LANTERN_AVATARS)
+                    lantern = (
+                        '<span class="lantern" title="El farolillo rojo">🏮'
+                        '<span class="avatar-pop">'
+                        f'<span class="av-emoji">{emoji}</span>'
+                        f'<span class="av-cap">{cap}</span></span></span>'
+                    )
                 brows.append(
                     f'<div class="board-row{last}" style="animation-delay:{j*70}ms">'
                     f'<div class="rank">{pos}</div>'
-                    f'<div class="meta"><div class="who">{proper_name(s.name)}</div>'
+                    f'<div class="meta"><div class="who">{proper_name(s.name)}{lantern}</div>'
                     f'<div class="barwrap"><span class="bar" style="width:{pct}%"></span></div></div>'
                     f'<div class="pts">{fmt(s.total)}<small>PTS</small></div>'
                     f"</div>"

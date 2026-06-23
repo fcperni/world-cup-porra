@@ -52,7 +52,8 @@ with safe_page():
         cls = f"fx-team {side}" + (" ph" if placeholder else "")
         fl = "" if placeholder else flag_img(name, height=15)
         chip = f'<span class="fl">{fl}</span>' if fl else ""
-        nm = f'<span class="nm">{name}</span>'
+        heart = " 💜" if name == "Portugal" else ""
+        nm = f'<span class="nm">{name}{heart}</span>'
         inner = f"{nm} {chip}" if side == "home" else f"{chip} {nm}"
         return f'<div class="{cls}">{inner}</div>'
 
