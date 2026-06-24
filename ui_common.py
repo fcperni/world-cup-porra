@@ -220,7 +220,7 @@ def configure_page() -> None:
 # La página https://suno.com/song/<id> sirve el audio en https://cdn1.suno.ai/<id>.mp3.
 _SONG_URL = "https://cdn1.suno.ai/6c62706a-5c1f-4089-ab3f-6722ef0f6f4b.mp3"
 
-# Mini-reproductor autocontenido. Va en un iframe (components.html) porque necesita
+# Mini-reproductor autocontenido. Va en un iframe (st.iframe) porque necesita
 # JS propio para los botones; aislado, no interfiere con el resto de la página.
 # Arranca PAUSADO (preload="none", sin autoplay): solo suena si el usuario le da al play.
 _MUSIC_HTML = """
@@ -320,9 +320,10 @@ def render_music_player() -> None:
     try:
         if not _song_available():
             return
-        import streamlit.components.v1 as components
         with st.sidebar:
-            components.html(_MUSIC_HTML.replace("__SONG_URL__", _SONG_URL), height=118)
+            # st.iframe (reemplazo de components.html, obsoleto tras 2026-06-01):
+            # un string que no es URL ni ruta se incrusta como HTML crudo en el iframe.
+            st.iframe(_MUSIC_HTML.replace("__SONG_URL__", _SONG_URL), height=118)
     except Exception:  # noqa: BLE001 — el reproductor es accesorio: nunca debe tumbar la página
         pass
 
