@@ -20,19 +20,27 @@ with safe_page():
     TEAM_HONOR = {"campeon", "subcampeon", "tercero"}  # categorías cuyo valor es una selección
     POS_LABEL = {1: "1º", 2: "2º", 3: "3º", 4: "4º"}
 
-    def show_points(df: "pd.DataFrame", **kwargs) -> None:
-        """Pinta una tabla con columna ``Puntos``, forzando dtype numérico.
+    PENDING = -1.0  # centinela: los pendientes ordenan por debajo de cualquier punto (>=0)
 
-        Garantiza que ``Puntos`` sea ``float`` (los pendientes -> ``NaN``) aunque
-        toda la columna esté vacía: así Streamlit la ordena como número y deja los
-        pendientes (None) por debajo de los 0, en vez de tratarla como texto.
+    def show_points(df: "pd.DataFrame") -> None:
+        """Pinta una tabla cuya columna ``Puntos`` ordena dejando los pendientes
+        siempre por debajo de los 0.
+
+        Streamlit ordena ``st.dataframe`` por el **dato numérico** subyacente, no por
+        el texto mostrado. Aprovechándolo: los pendientes se guardan como un centinela
+        negativo (así ordenan bajo los 0) y un ``Styler`` los pinta en blanco; el resto
+        de números se formatean con :func:`fmt`. Esto evita que los None se mezclen con
+        los 0 al ordenar (cosa que pasa si la columna lleva ``NaN`` o es de tipo texto).
         """
+        df = df.copy()
+        fmts: dict = {}
         if "Puntos" in df:
-            df = df.copy()
-            df["Puntos"] = pd.to_numeric(df["Puntos"], errors="coerce")
-        cfg = {"Puntos": st.column_config.NumberColumn(format="%.1f")}
-        cfg.update(kwargs.pop("column_config", {}))
-        st.dataframe(df, hide_index=True, width="stretch", column_config=cfg, **kwargs)
+            df["Puntos"] = pd.to_numeric(df["Puntos"], errors="coerce").fillna(PENDING)
+            fmts["Puntos"] = lambda v: "" if v < 0 else fmt(v)
+        if "Pts/equipo" in df:
+            df["Pts/equipo"] = pd.to_numeric(df["Pts/equipo"], errors="coerce")
+            fmts["Pts/equipo"] = lambda v: "" if pd.isna(v) else fmt(v)
+        st.dataframe(df.style.format(fmts), hide_index=True, width="stretch")
 
     configure_page()
     st.title("👤 Detalle por jugador")
@@ -131,8 +139,7 @@ with safe_page():
                             "Puntos": len(aciertos) * per if reached else None})
         st.markdown("**Equipos clasificados**")
         st.caption("Puntos por cada selección que sitúas en una ronda y que realmente la alcanza.")
-        show_points(pd.DataFrame(eq_rows),
-                    column_config={"Pts/equipo": st.column_config.NumberColumn(format="%.0f")})
+        show_points(pd.DataFrame(eq_rows))
 
         # partidos reales de cada ronda con resultado y ambas selecciones resueltas
         actual_by_phase: dict = {ph: [] for ph in KO_ORDER}
