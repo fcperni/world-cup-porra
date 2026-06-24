@@ -54,14 +54,19 @@ with safe_page():
     honor_actual = actual_honor(data, results, teams)
     score = score_player(data, results, player, positions=positions, resolved_teams=teams,
                          qualified_actual=qualified_actual, honor_actual=honor_actual)
-    st.metric("Puntos totales", fmt(score.total))
-
-    # desglose por categoría con puntos
-    active = {c: v for c, v in score.categories.items() if v}
-    if active:
-        cols = st.columns(min(5, len(active)))
-        for i, (c, v) in enumerate(active.items()):
-            cols[i % len(cols)].metric(c, fmt(v))
+    # resumen en 2x2: total (resaltado) + las tres grandes áreas de puntos.
+    grupos = score.categories["F. Grupos"] + score.categories["Pos. Grupos"]
+    honor = score.categories["Cuadro de Honor"]
+    elim = score.total - grupos - honor  # todas las categorías de eliminatorias
+    cards = [("Puntos totales", score.total, " total"), ("Fase de grupos", grupos, ""),
+             ("Eliminatorias", elim, ""), ("Cuadro de honor", honor, "")]
+    st.markdown(
+        '<div class="pscore">' + "".join(
+            f'<div class="card{cls}"><div class="lbl">{lbl}</div>'
+            f'<div class="num">{fmt(v)}</div></div>' for lbl, v, cls in cards
+        ) + "</div>",
+        unsafe_allow_html=True,
+    )
 
     tab_grupos, tab_ko, tab_honor = st.tabs(["Fase de grupos", "Eliminatorias", "Cuadro de honor"])
 

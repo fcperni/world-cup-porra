@@ -383,6 +383,20 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .honor td.pts{ font-weight:800; font-size:1.06rem; color:var(--lime);
   font-variant-numeric:tabular-nums; white-space:nowrap; }
 
+/* ---------- resumen de puntos del jugador (2x2) ---------- */
+.pscore{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:.2rem 0 .9rem; }
+.pscore .card{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:14px; padding:13px 18px; box-shadow:var(--shadow); }
+.pscore .card .lbl{ text-transform:uppercase; letter-spacing:.1em; font-size:.68rem;
+  color:var(--muted); font-weight:700; }
+.pscore .card .num{ font-weight:800; font-variant-numeric:tabular-nums; font-size:1.7rem;
+  margin-top:5px; color:var(--text); }
+.pscore .card.total{ border-color:rgba(194,242,60,.5);
+  box-shadow:inset 3px 0 0 var(--lime), var(--shadow);
+  background:linear-gradient(165deg,rgba(194,242,60,.07) 0%, var(--ink2) 90%); }
+.pscore .card.total .lbl{ color:var(--lime); }
+.pscore .card.total .num{ color:var(--lime); font-size:2.1rem; }
+
 /* ---------- estadísticas (KPIs y rankings) ---------- */
 .kpi-grid{ display:grid; gap:12px; margin:.2rem 0 .6rem;
   grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
