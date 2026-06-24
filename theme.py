@@ -374,11 +374,14 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .honor td{ padding:10px 15px; border-bottom:1px solid var(--line); vertical-align:middle; }
 .honor tr:last-child td{ border-bottom:0; }
 .honor td.cat{ text-transform:uppercase; letter-spacing:.05em; font-size:.76rem; font-weight:700;
-  color:var(--muted); background:rgba(255,255,255,.025); width:46%; white-space:nowrap;
+  color:var(--muted); background:rgba(255,255,255,.025); white-space:nowrap;
   border-right:1px solid var(--line); }
 .honor td.val{ font-weight:600; font-size:1.06rem; color:var(--text); }
 .honor td.val .nm{ margin-left:7px; }
 .honor td.val .fl-img{ vertical-align:middle; }
+.honor th:last-child, .honor td.pts{ text-align:right; }
+.honor td.pts{ font-weight:800; font-size:1.06rem; color:var(--lime);
+  font-variant-numeric:tabular-nums; white-space:nowrap; }
 
 /* ---------- estadísticas (KPIs y rankings) ---------- */
 .kpi-grid{ display:grid; gap:12px; margin:.2rem 0 .6rem;

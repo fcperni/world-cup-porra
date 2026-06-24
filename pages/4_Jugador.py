@@ -12,7 +12,7 @@ with safe_page():
     import analytics
     from porra.flags import flag_img
     from porra.models import KO_ORDER, Phase
-    from porra.scoring import score_match, score_player
+    from porra.scoring import HONOR_POINTS_KEY, actual_honor, score_match, score_player
     from porra.tournament import resolved_match_teams
     from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
 
@@ -32,7 +32,8 @@ with safe_page():
     player = next(p for p in data.players if p.name == selected)
     analytics.track("Jugador", player.name)
 
-    score = score_player(data, results, player)
+    teams = resolved_match_teams(data, results)
+    score = score_player(data, results, player, resolved_teams=teams)
     st.metric("Puntos totales", fmt(score.total))
 
     # desglose por categoría con puntos
@@ -67,39 +68,85 @@ with safe_page():
                      column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
 
     with tab_ko:
-        teams = resolved_match_teams(data, results)
+        # partidos reales de cada ronda con resultado y ambas selecciones resueltas
+        actual_by_phase: dict = {ph: [] for ph in KO_ORDER}
+        for m in data.matches:
+            if m.phase.is_knockout and results.has(m.number):
+                ht, at = teams[m.number]
+                if ht and at:
+                    actual_by_phase[m.phase].append((m, ht.name, at.name))
+
         rows = []
         for phase in KO_ORDER:
-            for m in sorted([m for m in data.matches if m.phase is phase], key=lambda m: m.number):
-                pred = player.ko_matches.get(m.number)
-                ht, at = teams[m.number]
+            preds = [player.ko_matches[n] for n in sorted(player.ko_matches)
+                     if (mo := data.match_by_number(n)) and mo.phase is phase]
+            for pred in preds:
                 real = "—"
-                if ht and at:
-                    g = results.goals(m.number)
-                    real = (f"{ht.name} {g[0]}-{g[1]} {at.name}" if g else f"{ht.name} - {at.name}")
+                pts = None
+                # se acierta el partido si la pareja predicha se enfrenta de verdad
+                # en esta ronda (en cualquier orden); el marcador se evalúa en el
+                # orden del jugador. Reproduce score_ko_matches.
+                if pred.home_team and pred.away_team and pred.sign is not None:
+                    pair = {pred.home_team, pred.away_team}
+                    for m, ah_name, aa_name in actual_by_phase[phase]:
+                        if {ah_name, aa_name} != pair:
+                            continue
+                        agh, aga = results.goals(m.number)
+                        real = f"{ah_name} {agh}-{aga} {aa_name}"
+                        if ah_name == pred.home_team:  # mismo orden que el jugador
+                            a_sign, a_h, a_a = results.sign(m.number), agh, aga
+                        else:  # orden invertido: trasponer el resultado real
+                            a_h, a_a = aga, agh
+                            a_sign = "1" if a_h > a_a else "2" if a_h < a_a else "X"
+                        pts = score_match(data.rules, phase, m.bonus, pred.sign,
+                                          pred.home_goals, pred.away_goals, a_sign, a_h, a_a)
+                        break
+                    # la ronda ya tiene resultados pero la pareja no se dio -> 0
+                    if pts is None and actual_by_phase[phase]:
+                        pts = 0.0
                 rows.append({
                     "Ronda": PHASE_LABELS[phase],
-                    "Pronóstico cruce": (f"{pred.home_team} - {pred.away_team}"
-                                         if pred and pred.home_team else "—"),
-                    "Resultado pron.": (f"{pred.sign}|{pred.home_goals}-{pred.away_goals}"
-                                        if pred and pred.sign else "—"),
+                    "Tu cruce": (f"{pred.home_team}  -  {pred.away_team}"
+                                 if pred.home_team else "—"),
+                    "Tu resultado": (f"{pred.sign}|{pred.home_goals}-{pred.away_goals}"
+                                     if pred.sign else "—"),
                     "Cruce real": real,
+                    "Puntos": round(pts, 1) if pts is not None else None,
                 })
-        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        st.caption("Aciertas un partido si la **pareja** que pronosticaste se enfrenta "
+                   "realmente en esa ronda (en cualquier orden); el marcador se valora en "
+                   "tu orden. Los puntos por **equipos clasificados** se muestran arriba.")
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch",
+                     column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
 
     with tab_honor:
         honor_filled = {k: v for k, v in player.honor.items() if v}
         if honor_filled:
+            honor_actual = actual_honor(data, results, teams)
+
+            def _honor_cell(key: str, value: str) -> str:
+                if key in TEAM_HONOR:  # selección: bandera + nombre oficial
+                    return f'{flag_img(value, 14)}<span class="nm">{value}</span>'
+                return f'<span class="nm">{proper_name(value)}</span>'  # jugador
+
             rows = []
             for k, v in honor_filled.items():
                 cat = HONOR_LABELS.get(k, k)
-                if k in TEAM_HONOR:  # selección: bandera + nombre oficial
-                    val = f'{flag_img(v, 14)}<span class="nm">{v}</span>'
-                else:                # jugador: nombre en formato Proper
-                    val = f'<span class="nm">{proper_name(v)}</span>'
-                rows.append(f'<tr><td class="cat">{cat}</td><td class="val">{val}</td></tr>')
+                actual = honor_actual.get(k)
+                real = _honor_cell(k, actual) if actual else "—"
+                if actual is None:          # aún no se conoce el real
+                    pts = "—"
+                elif v == actual:           # acierto
+                    pts = fmt(data.rules.points.get((HONOR_POINTS_KEY, k), 0.0))
+                else:                       # fallo
+                    pts = "0"
+                rows.append(
+                    f'<tr><td class="cat">{cat}</td><td class="val">{_honor_cell(k, v)}</td>'
+                    f'<td class="val">{real}</td><td class="pts">{pts}</td></tr>'
+                )
             st.markdown(
-                '<table class="honor"><thead><tr><th>Categoría</th><th>Pronóstico</th></tr></thead>'
+                '<table class="honor"><thead><tr><th>Categoría</th><th>Pronóstico</th>'
+                '<th>Real</th><th>Puntos</th></tr></thead>'
                 '<tbody>' + "".join(rows) + "</tbody></table>",
                 unsafe_allow_html=True,
             )
