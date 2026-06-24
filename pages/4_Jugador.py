@@ -12,11 +12,27 @@ with safe_page():
     import analytics
     from porra.flags import flag_img
     from porra.models import KO_ORDER, Phase
-    from porra.scoring import HONOR_POINTS_KEY, actual_honor, score_match, score_player
-    from porra.tournament import resolved_match_teams
+    from porra.scoring import (HONOR_POINTS_KEY, actual_honor, actual_qualified_teams,
+                               score_match, score_player)
+    from porra.tournament import group_positions, resolved_match_teams
     from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
 
     TEAM_HONOR = {"campeon", "subcampeon", "tercero"}  # categorías cuyo valor es una selección
+    POS_LABEL = {1: "1º", 2: "2º", 3: "3º", 4: "4º"}
+
+    def show_points(df: "pd.DataFrame", **kwargs) -> None:
+        """Pinta una tabla con columna ``Puntos``, forzando dtype numérico.
+
+        Garantiza que ``Puntos`` sea ``float`` (los pendientes -> ``NaN``) aunque
+        toda la columna esté vacía: así Streamlit la ordena como número y deja los
+        pendientes (None) por debajo de los 0, en vez de tratarla como texto.
+        """
+        if "Puntos" in df:
+            df = df.copy()
+            df["Puntos"] = pd.to_numeric(df["Puntos"], errors="coerce")
+        cfg = {"Puntos": st.column_config.NumberColumn(format="%.1f")}
+        cfg.update(kwargs.pop("column_config", {}))
+        st.dataframe(df, hide_index=True, width="stretch", column_config=cfg, **kwargs)
 
     configure_page()
     st.title("👤 Detalle por jugador")
@@ -33,7 +49,11 @@ with safe_page():
     analytics.track("Jugador", player.name)
 
     teams = resolved_match_teams(data, results)
-    score = score_player(data, results, player, resolved_teams=teams)
+    positions = group_positions(data, results)
+    qualified_actual = actual_qualified_teams(data, teams)
+    honor_actual = actual_honor(data, results, teams)
+    score = score_player(data, results, player, positions=positions, resolved_teams=teams,
+                         qualified_actual=qualified_actual, honor_actual=honor_actual)
     st.metric("Puntos totales", fmt(score.total))
 
     # desglose por categoría con puntos
@@ -61,13 +81,54 @@ with safe_page():
                          "Bonus": f"x{m.bonus}" if m.bonus > 1 else "",
                          "Puntos": round(pts, 1) if pts is not None else None})
         df = pd.DataFrame(rows)
+
+        # posiciones de grupo: se puntúan solo al cerrar el grupo (6 partidos)
+        played: dict[str, int] = {}
+        for m in gm:
+            if results.has(m.number):
+                played[m.group] = played.get(m.group, 0) + 1
+        complete = {g for g, n in played.items() if n == 6}
+        pos_rows = []
+        for (g, pos), predicted in sorted(player.group_positions.items()):
+            real_team = positions.get((g, pos))
+            pts = real = None
+            if g in complete and real_team:
+                real = real_team.name
+                pts = data.rules.points.get(("group_position", pos), 0.0) if predicted == real else 0.0
+            pos_rows.append({"Grupo": g, "Posición": POS_LABEL.get(pos, str(pos)),
+                             "Tu pronóstico": predicted or "—", "Real": real or "—",
+                             "Puntos": pts})
+        pos_df = pd.DataFrame(pos_rows)
+
         gsel = st.multiselect("Filtrar por grupo", sorted(df["Grupo"].unique()))
         if gsel:
             df = df[df["Grupo"].isin(gsel)]
-        st.dataframe(df, hide_index=True, width="stretch",
-                     column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
+            pos_df = pos_df[pos_df["Grupo"].isin(gsel)]
+
+        st.markdown("**Partidos**")
+        show_points(df)
+        st.markdown("**Posiciones de grupo**")
+        st.caption("Se puntúan al cerrar el grupo (5 puntos por posición acertada).")
+        show_points(pos_df)
 
     with tab_ko:
+        # equipos clasificados: por cada selección que sitúas en una ronda y que
+        # realmente la alcanza. Reproduce score_qualified.
+        eq_rows = []
+        for phase in KO_ORDER:
+            predicted = player.qualified.get(phase, [])
+            reached = qualified_actual.get(phase, set())
+            aciertos = [t for t in predicted if t in reached]
+            per = data.rules.points.get((phase, "clasificado"), 0.0)
+            eq_rows.append({"Ronda": PHASE_LABELS[phase],
+                            "Aciertos": len(aciertos),
+                            "Pts/equipo": per,
+                            "Puntos": len(aciertos) * per if reached else None})
+        st.markdown("**Equipos clasificados**")
+        st.caption("Puntos por cada selección que sitúas en una ronda y que realmente la alcanza.")
+        show_points(pd.DataFrame(eq_rows),
+                    column_config={"Pts/equipo": st.column_config.NumberColumn(format="%.0f")})
+
         # partidos reales de cada ronda con resultado y ambas selecciones resueltas
         actual_by_phase: dict = {ph: [] for ph in KO_ORDER}
         for m in data.matches:
@@ -113,17 +174,14 @@ with safe_page():
                     "Cruce real": real,
                     "Puntos": round(pts, 1) if pts is not None else None,
                 })
+        st.markdown("**Partidos**")
         st.caption("Aciertas un partido si la **pareja** que pronosticaste se enfrenta "
-                   "realmente en esa ronda (en cualquier orden); el marcador se valora en "
-                   "tu orden. Los puntos por **equipos clasificados** se muestran arriba.")
-        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch",
-                     column_config={"Puntos": st.column_config.NumberColumn(format="%.1f")})
+                   "realmente en esa ronda (en cualquier orden); el marcador se valora en tu orden.")
+        show_points(pd.DataFrame(rows))
 
     with tab_honor:
         honor_filled = {k: v for k, v in player.honor.items() if v}
         if honor_filled:
-            honor_actual = actual_honor(data, results, teams)
-
             def _honor_cell(key: str, value: str) -> str:
                 if key in TEAM_HONOR:  # selección: bandera + nombre oficial
                     return f'{flag_img(value, 14)}<span class="nm">{value}</span>'
