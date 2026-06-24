@@ -209,7 +209,7 @@ with safe_page():
                 elif v == actual:           # acierto
                     pts = fmt(data.rules.points.get((HONOR_POINTS_KEY, k), 0.0))
                 else:                       # fallo
-                    pts = "0"
+                    pts = fmt(0.0)
                 rows.append(
                     f'<tr><td class="cat">{cat}</td><td class="val">{_honor_cell(k, v)}</td>'
                     f'<td class="val">{real}</td><td class="pts">{pts}</td></tr>'

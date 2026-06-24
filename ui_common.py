@@ -329,8 +329,8 @@ def render_music_player() -> None:
 
 
 def fmt(value: float) -> str:
-    """Formatea puntos: entero si no tiene decimales, si no con un decimal."""
-    return str(int(value)) if float(value).is_integer() else f"{value:.1f}"
+    """Formatea puntos siempre con un decimal (7.0, no 7), para un formato uniforme."""
+    return f"{value:.1f}"
 
 
 def proper_name(name: str) -> str:

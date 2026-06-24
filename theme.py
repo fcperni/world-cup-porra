@@ -383,6 +383,22 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .honor td.pts{ font-weight:800; font-size:1.06rem; color:var(--lime);
   font-variant-numeric:tabular-nums; white-space:nowrap; }
 
+/* ---------- tabla de desglose por categoría (Clasificación) ---------- */
+.cat-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px;
+  box-shadow:var(--shadow); margin-top:.3rem; }
+.cat-t{ width:100%; border-collapse:collapse; }
+.cat-t th{ text-transform:uppercase; letter-spacing:.06em; font-size:.62rem; font-weight:800;
+  color:var(--lime); background:var(--ink2); padding:10px 10px; text-align:right;
+  white-space:nowrap; border-bottom:2px solid var(--line); }
+.cat-t th.who{ text-align:left; }
+.cat-t th.pos, .cat-t td.pos{ width:26px; text-align:center; color:var(--muted); }
+.cat-t td{ padding:9px 10px; text-align:right; font-variant-numeric:tabular-nums;
+  color:var(--text); border-bottom:1px solid var(--line); white-space:nowrap; }
+.cat-t tr:last-child td{ border-bottom:0; }
+.cat-t td.who{ text-align:left; font-weight:700; text-transform:uppercase;
+  border-right:1px solid var(--line); background:rgba(255,255,255,.025); }
+.cat-t th.tot, .cat-t td.tot{ color:var(--lime); font-weight:800; border-left:1px solid var(--line); }
+
 /* ---------- resumen de puntos del jugador (2x2) ---------- */
 .pscore{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:.2rem 0 .9rem; }
 .pscore .card{ background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
