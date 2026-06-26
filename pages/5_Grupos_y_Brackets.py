@@ -17,6 +17,7 @@ with safe_page():
         compute_group_standings,
         qualified_thirds_groups,
         resolved_match_teams,
+        third_place_ranking,
     )
     from ui_common import configure_page, get_data, get_results
 
@@ -64,6 +65,43 @@ with safe_page():
                 '<tbody>' + "".join(body) + '</tbody></table></div>'
             )
         st.markdown('<div class="grp-grid">' + "".join(cards) + "</div>", unsafe_allow_html=True)
+
+        # --- Estado de las terceras posiciones ---
+        if group_played:
+            st.caption(
+                "Los **12 terceros** ordenados por los criterios FIFA (puntos → DG → GF → "
+                "ranking). Los **8 primeros** (ámbar) se clasifican; los **4 últimos** (coral) "
+                "quedan fuera. Este orden determinará los cruces de dieciseisavos una vez "
+                "terminen los 12 grupos."
+            )
+            ranking = third_place_ranking(standings)  # 12 terceros, de mejor a peor
+            rows = []
+            for i, (group, r) in enumerate(ranking, 1):
+                qualifies = i <= 8
+                classes = ["q3" if qualifies else "out"]
+                if i == 8:
+                    classes.append("cut")  # separador entre clasificados y eliminados
+                if r.team.name == "España":
+                    classes.append("esp")
+                dg = f"+{r.gd}" if r.gd > 0 else str(r.gd)
+                tick = '<span class="qtick">✓</span>' if r.team.name in clinched else ""
+                estado = "Clasificado" if qualifies else "Eliminado"
+                rows.append(
+                    f'<tr class="{" ".join(classes)}"><td class="pos">{i}</td>'
+                    f'<td class="grp-c">{group}</td>'
+                    f'<td class="sel">{flag_img(r.team.name, 13)}<span class="nm">{r.team.name}</span>{tick}</td>'
+                    f'<td class="pts">{r.points}</td><td>{r.played}</td>'
+                    f'<td>{r.gf}</td><td>{r.ga}</td><td>{dg}</td>'
+                    f'<td class="st">{estado}</td></tr>'
+                )
+            st.markdown(
+                '<div class="thirds"><div class="thirds-h">Mejores terceros</div>'
+                '<table class="thirds-t"><thead><tr><th></th><th>Grupo</th>'
+                '<th class="sel">Selección</th><th>Pts</th><th>J</th>'
+                '<th>GF</th><th>GC</th><th>DG</th><th>Estado</th></tr></thead>'
+                '<tbody>' + "".join(rows) + '</tbody></table></div>',
+                unsafe_allow_html=True,
+            )
 
     with tab_brackets:
         st.caption(

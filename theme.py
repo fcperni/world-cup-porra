@@ -365,6 +365,33 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .grp-t tr.q3 td.pos{ color:var(--gold); font-weight:800; }
 .grp-t tr.esp td.sel{ color:var(--lime); }
 
+/* ---------- estado de las terceras posiciones (tabla única, ranking 1-12) ---------- */
+.thirds{ margin-top:18px; background:linear-gradient(165deg,var(--surface) 0%, var(--ink2) 100%);
+  border:1px solid var(--line); border-radius:13px; overflow:hidden; box-shadow:var(--shadow); }
+.thirds-h{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; font-size:1.05rem;
+  padding:9px 14px; background:var(--ink2); border-bottom:1px solid var(--line); }
+.thirds-t{ width:100%; border-collapse:collapse; }
+.thirds-t th{ font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:700; padding:6px 6px; text-align:center; border-bottom:1px solid var(--line); }
+.thirds-t th.sel{ text-align:left; padding-left:12px; }
+.thirds-t td{ padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,.045);
+  font-variant-numeric:tabular-nums; font-size:.9rem; }
+.thirds-t tr:last-child td{ border-bottom:0; }
+.thirds-t td.pos{ width:30px; color:var(--muted); font-weight:800; }
+.thirds-t td.grp-c{ width:46px; color:var(--muted); font-weight:700; }
+.thirds-t td.sel{ text-align:left; font-weight:600; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; padding-left:12px; }
+.thirds-t td.sel .fl-img{ vertical-align:middle; margin-right:7px; }
+.thirds-t td.sel .qtick{ color:var(--lime); font-weight:800; margin-left:6px; font-size:.82rem; }
+.thirds-t td.pts{ font-weight:800; color:var(--text); }
+.thirds-t td.st{ font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+.thirds-t tr.q3{ background:rgba(243,196,75,.08); box-shadow:inset 3px 0 0 var(--gold); }
+.thirds-t tr.q3 td.pos, .thirds-t tr.q3 td.st{ color:var(--gold); }
+.thirds-t tr.cut td{ border-bottom:2px solid var(--lime-dim); }
+.thirds-t tr.out{ opacity:.72; box-shadow:inset 3px 0 0 var(--coral); }
+.thirds-t tr.out td.pos, .thirds-t tr.out td.st{ color:var(--coral); }
+.thirds-t tr.esp td.sel{ color:var(--lime); }
+
 /* ---------- tabla del cuadro de honor ---------- */
 .honor{ width:100%; border-collapse:collapse; margin-top:.3rem;
   border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
