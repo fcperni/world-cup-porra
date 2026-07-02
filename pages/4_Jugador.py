@@ -7,6 +7,8 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    from collections import defaultdict
+
     import pandas as pd
 
     import analytics
@@ -190,6 +192,94 @@ with safe_page():
         st.caption("Aciertas un partido si la **pareja** que pronosticaste se enfrenta "
                    "realmente en esa ronda (en cualquier orden); el marcador se valora en tu orden.")
         show_points(pd.DataFrame(rows))
+
+        # --- Cuadro de eliminatorias del jugador ---------------------------------
+        # Mismo formato que la página "Grupos y Brackets", pero con las selecciones y
+        # marcadores que el jugador pronosticó, marcando aciertos (✓) y fallos (✗).
+        st.markdown("**Tu cuadro**")
+        st.caption(
+            "El cuadro tal y como lo rellenaste. ✓ = la selección alcanzó realmente esa "
+            "ronda; ✗ = no llegó. El resaltado señala a quién diste como vencedor del cruce. "
+            "Desliza en horizontal para ver todas las rondas."
+        )
+
+        if not player.ko_matches:
+            st.caption("Sin pronósticos de eliminatorias.")
+        else:
+            SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4",
+                     Phase.SF: "1/2", Phase.FINAL: "Final"}
+            DEPTH_PHASE = {0: Phase.FINAL, 1: Phase.SF, 2: Phase.QF, 3: Phase.R16, 4: Phase.R32}
+
+            # una ronda está "cerrada" cuando ya se conocen ambas selecciones de todos
+            # sus partidos: solo entonces un equipo ausente cuenta como fallo (antes,
+            # aún podría aparecer y queda pendiente, sin marca).
+            phase_complete = {}
+            for ph in KO_ORDER:
+                ms = [m for m in data.matches if m.phase is ph]
+                phase_complete[ph] = bool(ms) and all(
+                    teams.get(m.number, (None, None))[0] and teams.get(m.number, (None, None))[1]
+                    for m in ms
+                )
+
+            def mark_for(team_name: str | None, ph: "Phase") -> str | None:
+                if not team_name:
+                    return None
+                if team_name in qualified_actual.get(ph, set()):
+                    return "hit"
+                return "miss" if phase_complete.get(ph) else None
+
+            def bk_side(token: str, team_name, score, win: bool, mark) -> str:
+                if team_name:
+                    cls = "bk-side win" if win else "bk-side"
+                    badge = (f'<span class="bk-mark {mark}">{"✓" if mark == "hit" else "✗"}</span>'
+                             if mark else "")
+                    inner = flag_img(team_name, 11) + f'<span class="nm">{team_name}</span>' + badge
+                else:
+                    cls = "bk-side ph"
+                    inner = f'<span class="nm">{token}</span>'
+                sc = "" if score is None else str(score)
+                return f'<div class="{cls}">{inner}<span class="sc">{sc}</span></div>'
+
+            def bk_card(n: int) -> str:
+                pred = player.ko_matches.get(n)
+                ho_ref, ao_ref = data.bracket[n]
+                ph = data.match_by_number(n).phase
+                ht = pred.home_team if pred else None
+                at = pred.away_team if pred else None
+                hg = pred.home_goals if pred else None
+                ag = pred.away_goals if pred else None
+                return ('<div class="bk-match">'
+                        + bk_side(ho_ref, ht, hg, bool(pred and pred.sign == "1"), mark_for(ht, ph))
+                        + bk_side(ao_ref, at, ag, bool(pred and pred.sign == "2"), mark_for(at, ph))
+                        + "</div>")
+
+            def feeders(n: int) -> list[int]:
+                return [int(t[1:]) for t in data.bracket.get(n, ())
+                        if t[:1] in ("W", "L") and t[1:].isdigit()]
+
+            order: dict[int, list[int]] = defaultdict(list)
+
+            def dfs(n: int, depth: int) -> None:
+                for f in feeders(n):
+                    dfs(f, depth + 1)
+                order[depth].append(n)
+
+            dfs(104, 0)  # raíz: la final
+
+            cols = []
+            for depth in sorted(order, reverse=True):  # R32 (4) → … → Final (0)
+                body = "".join(bk_card(n) for n in order[depth])
+                cols.append(
+                    f'<div class="bk-col"><div class="bk-col-label">{SHORT[DEPTH_PHASE[depth]]}</div>'
+                    f'<div class="bk-col-body">{body}</div></div>'
+                )
+            st.markdown('<div class="bracket">' + "".join(cols) + "</div>", unsafe_allow_html=True)
+
+            st.markdown(
+                '<div class="bk-third"><div class="bk-col-label">3er y 4º puesto</div>'
+                + bk_card(103) + "</div>",
+                unsafe_allow_html=True,
+            )
 
     with tab_honor:
         honor_filled = {k: v for k, v in player.honor.items() if v}

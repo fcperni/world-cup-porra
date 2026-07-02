@@ -323,6 +323,10 @@ a.fx-row.live{ border-color:rgba(255,90,60,.55); box-shadow:inset 3px 0 0 var(--
 .bk-third .bk-match{ border-color:rgba(243,196,75,.4); }
 .bk-third .bk-side.win .nm, .bk-third .bk-side.win .sc{ color:var(--gold); }
 .bk-third .bk-side.win{ background:rgba(243,196,75,.1); }
+/* aciertos/fallos del cuadro del jugador (página Jugador) */
+.bk-side .bk-mark{ flex:0 0 auto; margin-left:5px; font-weight:800; font-size:.82rem; }
+.bk-side .bk-mark.hit{ color:var(--lime); }
+.bk-side .bk-mark.miss{ color:var(--coral); }
 
 /* ---------- selecciones ya clasificadas (top-2 asegurado): check en la tabla ---------- */
 .grp-t td.sel .qtick{ color:var(--lime); font-weight:800; margin-left:6px; font-size:.82rem; }
