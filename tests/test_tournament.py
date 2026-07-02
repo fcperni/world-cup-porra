@@ -8,6 +8,7 @@ from porra.results_store import Results
 from porra.tournament import (
     clinched_knockout,
     compute_group_standings,
+    eliminated_teams,
     locked_group_positions,
     qualified_thirds_groups,
     resolve_bracket,
@@ -201,3 +202,38 @@ def test_ko_winner_by_penalties(data):
     assert res.winner_side(73) is None  # empate sin penaltis
     res.ko_winners[73] = "away"
     assert res.winner_side(73) == "away"
+
+
+def test_no_eliminated_without_results(data):
+    assert eliminated_teams(data, Results()) == set()
+
+
+def test_group_stage_eliminates_fourths_and_worst_thirds(data):
+    res = Results()
+    _fill_groups(data, res)
+    st = compute_group_standings(data, res)
+    elim = eliminated_teams(data, res, st)
+    # 12 cuartos de grupo + los 4 terceros que no entran entre los 8 mejores
+    fourths = {ranked[3].team.name for ranked in st.values()}
+    best = set(qualified_thirds_groups(st))
+    worst_thirds = {ranked[2].team.name for g, ranked in st.items() if g not in best}
+    assert fourths <= elim
+    assert worst_thirds <= elim
+    assert len(elim) == 16
+    # ninguna selección clasificada a dieciseisavos está marcada como eliminada
+    teams = resolved_match_teams(data, res, st)
+    r32 = ({teams[n][0].name for n in range(73, 89)}
+           | {teams[n][1].name for n in range(73, 89)})
+    assert not (r32 & elim)
+
+
+def test_ko_loser_is_eliminated(data):
+    res = Results()
+    _fill_groups(data, res)
+    st = compute_group_standings(data, res)
+    teams = resolved_match_teams(data, res, st)
+    home, away = teams[73]
+    res.set_match(73, 2, 0)  # gana el local
+    elim = eliminated_teams(data, res, st)
+    assert away.name in elim       # el perdedor queda fuera
+    assert home.name not in elim   # el ganador sigue vivo

@@ -385,3 +385,40 @@ def resolved_match_teams(data: TournamentData, results: Results,
     for n, (home, away) in data.bracket.items():
         out[n] = (resolved.get(home), resolved.get(away))
     return out
+
+
+def eliminated_teams(data: TournamentData, results: Results,
+                     standings: dict[str, list[GroupRow]] | None = None) -> set[str]:
+    """Nombres de selecciones ya **eliminadas** del torneo.
+
+    Condición *suficiente* (sin falsos positivos): una selección eliminada no
+    volverá a aparecer en ninguna ronda a la que todavía no haya llegado, así que
+    sus apariciones en el cuadro de un jugador para rondas posteriores son fallos
+    seguros. Incluye:
+
+    * El **perdedor** de cualquier cruce KO con ganador ya decidido (el perdedor
+      de semifinal juega el 3er/4º puesto, pero ya no puede llegar a la final).
+    * El **4º** de un grupo cerrado (nunca clasifica).
+    * El **3º** de un grupo cerrado cuando los 12 grupos están completos y no
+      entra entre los 8 mejores terceros (antes su suerte aún no está decidida).
+    """
+    if standings is None:
+        standings = compute_group_standings(data, results)
+    out: set[str] = set()
+
+    resolved = resolved_match_teams(data, results, standings)
+    for n, (ht, at) in resolved.items():
+        side = results.winner_side(n)
+        if side and ht and at:
+            out.add(at.name if side == "home" else ht.name)
+
+    complete = _complete_groups(data, results)
+    all_done = len(complete) == 12
+    best_thirds = set(qualified_thirds_groups(standings)) if all_done else set()
+    for g in complete:
+        ranked = standings.get(g, [])
+        if len(ranked) >= 4:
+            out.add(ranked[3].team.name)  # 4º: nunca clasifica
+        if all_done and len(ranked) >= 3 and g not in best_thirds:
+            out.add(ranked[2].team.name)  # 3º que no entra entre los mejores
+    return out

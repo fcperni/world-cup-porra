@@ -16,7 +16,7 @@ with safe_page():
     from porra.models import KO_ORDER, Phase
     from porra.scoring import (HONOR_POINTS_KEY, actual_honor, actual_qualified_teams,
                                score_match, score_player)
-    from porra.tournament import group_positions, resolved_match_teams
+    from porra.tournament import eliminated_teams, group_positions, resolved_match_teams
     from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
 
     TEAM_HONOR = {"campeon", "subcampeon", "tercero"}  # categorías cuyo valor es una selección
@@ -199,13 +199,15 @@ with safe_page():
         st.markdown("**Tu cuadro**")
         st.caption(
             "El cuadro tal y como lo rellenaste. ✓ = la selección alcanzó realmente esa "
-            "ronda; ✗ = no llegó. El resaltado señala a quién diste como vencedor del cruce. "
-            "Desliza en horizontal para ver todas las rondas."
+            "ronda; ✗ = no llegó (ya eliminada, o la ronda se cerró sin ella). El resaltado "
+            "señala a quién diste como vencedor del cruce. Desliza en horizontal para ver "
+            "todas las rondas."
         )
 
         if not player.ko_matches:
             st.caption("Sin pronósticos de eliminatorias.")
         else:
+            eliminated = eliminated_teams(data, results)
             SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4",
                      Phase.SF: "1/2", Phase.FINAL: "Final"}
             DEPTH_PHASE = {0: Phase.FINAL, 1: Phase.SF, 2: Phase.QF, 3: Phase.R16, 4: Phase.R32}
@@ -225,8 +227,11 @@ with safe_page():
                 if not team_name:
                     return None
                 if team_name in qualified_actual.get(ph, set()):
-                    return "hit"
-                return "miss" if phase_complete.get(ph) else None
+                    return "hit"  # la selección alcanzó realmente esta ronda
+                # eliminada => nunca llegará a esta ronda; o la ronda ya se cerró sin ella
+                if team_name in eliminated or phase_complete.get(ph):
+                    return "miss"
+                return None
 
             def bk_side(token: str, team_name, score, win: bool, mark) -> str:
                 if team_name:
