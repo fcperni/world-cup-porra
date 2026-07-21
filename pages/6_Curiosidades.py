@@ -24,7 +24,7 @@ with safe_page():
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import resolved_match_teams
-    from ui_common import PHASE_LABELS, configure_page, get_data, get_results, proper_name
+    from ui_common import PHASE_LABELS, configure_page, get_data, get_results, proper_name, require_porra
 
     configure_page()
     analytics.track("Curiosidades")
@@ -36,6 +36,7 @@ with safe_page():
     )
 
     data = get_data()
+    require_porra(data)
     results = get_results()  # dispara la sincronización automática y permite marcar aciertos
     splits = stats.match_sign_splits(data)
     ko_splits = stats.match_team_splits(data)

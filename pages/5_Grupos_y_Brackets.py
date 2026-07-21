@@ -7,9 +7,11 @@ import streamlit as st
 from page_guard import safe_page
 
 with safe_page():
+    import re
     from collections import defaultdict
 
     import analytics
+    from porra.euro2028 import prettify
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import (
@@ -27,18 +29,24 @@ with safe_page():
 
     data = get_data()
     results = get_results()
+    fmt = data.format
+    n_thirds = fmt.thirds_qualify
+    first_ko_label = {Phase.R32: "dieciseisavos", Phase.R16: "octavos"}.get(fmt.first_ko_phase, "la ronda inicial")
 
     tab_grupos, tab_brackets = st.tabs(["Clasificación de grupos", "Eliminatorias"])
 
     with tab_grupos:
-        st.caption(
-            "Avanzan a dieciseisavos los **dos primeros** de cada grupo (verde) y los "
-            "**ocho mejores terceros** (ámbar)."
-        )
         standings = compute_group_standings(data, results)
+        if not standings:
+            st.info("Aún no hay grupos sorteados para esta competición. Puedes consultar el "
+                    "calendario y las sedes en **Calendario y Resultados**.")
+        st.caption(
+            f"Avanzan a {first_ko_label} los **dos primeros** de cada grupo (verde) y los "
+            f"**{n_thirds} mejores terceros** (ámbar)."
+        )
         group_played = any(results.has(m.number) for m in data.matches if m.phase is Phase.GROUPS)
         # grupos cuyo 3º clasifica (provisional mientras se juega; vacío sin resultados)
-        best_thirds = set(qualified_thirds_groups(standings)) if group_played else set()
+        best_thirds = set(qualified_thirds_groups(standings, n_thirds)) if group_played else set()
         # selecciones con la clasificación a dieciseisavos ya asegurada (✓)
         clinched = clinched_knockout(data, results, standings)
         if clinched:
@@ -68,18 +76,19 @@ with safe_page():
 
         # --- Estado de las terceras posiciones ---
         if group_played:
+            n_out = fmt.n_groups - n_thirds
             st.caption(
-                "Los **12 terceros** ordenados por los criterios FIFA (puntos → DG → GF → "
-                "ranking). Los **8 primeros** (ámbar) se clasifican; los **4 últimos** (coral) "
-                "quedan fuera. Este orden determinará los cruces de dieciseisavos una vez "
-                "terminen los 12 grupos."
+                f"Los **{fmt.n_groups} terceros** ordenados por los criterios FIFA (puntos → DG → "
+                f"GF → ranking). Los **{n_thirds} primeros** (ámbar) se clasifican; los "
+                f"**{n_out} últimos** (coral) quedan fuera. Este orden determinará los cruces "
+                f"una vez terminen los {fmt.n_groups} grupos."
             )
-            ranking = third_place_ranking(standings)  # 12 terceros, de mejor a peor
+            ranking = third_place_ranking(standings)  # todos los terceros, de mejor a peor
             rows = []
             for i, (group, r) in enumerate(ranking, 1):
-                qualifies = i <= 8
+                qualifies = i <= n_thirds
                 classes = ["q3" if qualifies else "out"]
-                if i == 8:
+                if i == n_thirds:
                     classes.append("cut")  # separador entre clasificados y eliminados
                 if r.team.name == "España":
                     classes.append("esp")
@@ -113,12 +122,22 @@ with safe_page():
         )
 
         teams = resolved_match_teams(data, results)
-        SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4", Phase.SF: "1/2", Phase.FINAL: "Final"}
-        DEPTH_PHASE = {0: Phase.FINAL, 1: Phase.SF, 2: Phase.QF, 3: Phase.R16, 4: Phase.R32}
+        PHASE_SHORT = {Phase.R32: "1/16", Phase.R16: "1/8", Phase.QF: "1/4",
+                       Phase.SF: "1/2", Phase.FINAL: "Final"}
+        # fases del árbol principal (sin el 3er/4º puesto), de la final hacia atrás
+        bracket_phases = [ph for ph in fmt.ko_order if ph is not Phase.THIRD]
+        DEPTH_PHASE = {i: ph for i, ph in enumerate(reversed(bracket_phases))}
+
+        _MATCH_RE = re.compile(r"Match\s+(\d+)")
 
         def feeders(n: int) -> list[int]:
-            return [int(t[1:]) for t in data.bracket.get(n, ())
-                    if t[:1] in ("W", "L") and t[1:].isdigit()]
+            """Partidos que alimentan a ``n`` (tokens ``W##``/``L##`` o ``Winner Match ##``)."""
+            out = []
+            for t in data.bracket.get(n, ()):
+                m = re.match(r"^[WL](\d+)$", t) or _MATCH_RE.search(t)
+                if m:
+                    out.append(int(m.group(1)))
+            return out
 
         order: dict[int, list[int]] = defaultdict(list)
 
@@ -127,7 +146,7 @@ with safe_page():
                 dfs(f, depth + 1)
             order[depth].append(n)
 
-        dfs(104, 0)  # raíz: la final
+        dfs(fmt.final_match_number, 0)  # raíz: la final
 
         def side_html(token: str, team, score, win: bool) -> str:
             if team is not None:
@@ -135,7 +154,7 @@ with safe_page():
                 inner = flag_img(team.name, 11) + f'<span class="nm">{team.name}</span>'
             else:
                 cls = "bk-side ph"
-                inner = f'<span class="nm">{token}</span>'
+                inner = f'<span class="nm">{prettify(token)}</span>'
             sc = "" if score is None else str(score)
             return f'<div class="{cls}">{inner}<span class="sc">{sc}</span></div>'
 
@@ -150,14 +169,17 @@ with safe_page():
                     + "</div>")
 
         cols = []
-        for depth in sorted(order, reverse=True):  # R32 (4) → … → Final (0)
+        for depth in sorted(order, reverse=True):  # ronda inicial → … → Final (0)
+            label = PHASE_SHORT.get(DEPTH_PHASE.get(depth), "")
             body = "".join(match_card(n) for n in order[depth])
-            cols.append(f'<div class="bk-col"><div class="bk-col-label">{SHORT[DEPTH_PHASE[depth]]}</div>'
+            cols.append(f'<div class="bk-col"><div class="bk-col-label">{label}</div>'
                         f'<div class="bk-col-body">{body}</div></div>')
         st.markdown('<div class="bracket">' + "".join(cols) + "</div>", unsafe_allow_html=True)
 
-        st.markdown(
-            '<div class="bk-third"><div class="bk-col-label">3er y 4º puesto</div>'
-            + match_card(103) + "</div>",
-            unsafe_allow_html=True,
-        )
+        third_num = fmt.third_place_match_number
+        if third_num is not None and third_num in data.bracket:
+            st.markdown(
+                '<div class="bk-third"><div class="bk-col-label">3er y 4º puesto</div>'
+                + match_card(third_num) + "</div>",
+                unsafe_allow_html=True,
+            )

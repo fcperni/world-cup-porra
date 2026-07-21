@@ -204,6 +204,19 @@ def load_tournament(xlsx_path: Path | str = DEFAULT_XLSX) -> TournamentData:
                           format=WC2026_FORMAT, competition_id="wc2026")
 
 
+def load_scoring_rules(xlsx_path: Path | str = DEFAULT_XLSX) -> ScoringRules:
+    """Solo la tabla de puntuación de ADMIN.xlsx (fuente única de los valores).
+
+    La reutilizan otras competiciones que aún no tienen su propio Excel (p.ej. el
+    stub de la Euro 2028), para partir de una estructura de puntos idéntica a la
+    del Mundial.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wb = openpyxl.load_workbook(Path(xlsx_path), data_only=True)
+    return _load_rules(wb["ADMIN"])
+
+
 def _load_thirds_table(ws) -> dict[str, dict[str, str]]:
     """Tabla oficial de asignación de mejores terceros (hoja Combinaciones3).
 

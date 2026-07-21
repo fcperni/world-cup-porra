@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import streamlit as st
 
-from porra.excel_loader import load_tournament
+from porra.competitions import Competition, DEFAULT_ID, get_competition
 from porra.github_sync import commit_file
 from porra.models import Phase, TournamentData
-from porra.results_store import DEFAULT_RESULTS, Results, load_results, save_results, to_dict
+from porra.results_store import Results, load_results, save_results, to_dict
 
 import json
 
@@ -38,10 +38,56 @@ HONOR_LABELS = {
 }
 
 
-@st.cache_data(show_spinner="Leyendo ADMIN.xlsx…")
+SESSION_KEY = "competition_id"
+
+
+def active_id() -> str:
+    """Id de la competición activa (default si no se ha elegido ninguna)."""
+    return st.session_state.get(SESSION_KEY) or DEFAULT_ID
+
+
+def active_competition() -> Competition:
+    """Competición activa (:class:`~porra.competitions.Competition`)."""
+    return get_competition(active_id())
+
+
+def set_competition(comp_id: str) -> None:
+    """Fija la competición activa en el estado de sesión."""
+    st.session_state[SESSION_KEY] = comp_id
+
+
+def has_selection() -> bool:
+    """¿El usuario ha elegido explícitamente una competición?"""
+    return bool(st.session_state.get(SESSION_KEY))
+
+
+@st.cache_data(show_spinner="Cargando competición…")
+def _load_data(comp_id: str) -> TournamentData:
+    """Carga (cacheada por competición) los datos del torneo vía su loader."""
+    return get_competition(comp_id).loader()
+
+
 def get_data() -> TournamentData:
-    """Carga (cacheada) los datos del Excel. Inmutable durante la sesión."""
-    return load_tournament()
+    """Datos de la competición activa (cacheados, inmutables durante la sesión)."""
+    return _load_data(active_id())
+
+
+def require_porra(data: TournamentData) -> None:
+    """Detiene la página con un aviso si la competición aún no tiene participantes.
+
+    Las páginas que dependen de las predicciones (clasificación, jugador, etc.) no
+    tienen nada que mostrar para un torneo sin porra todavía (p.ej. la Euro 2028):
+    en vez de romper, invitan a explorar el calendario y los grupos.
+    """
+    if not data.players:
+        comp = active_competition()
+        st.info(
+            f"La porra de la **{comp.name}** aún no tiene participantes ni predicciones. "
+            "Cuando haya sorteo y pronósticos, esta sección cobrará vida. Mientras, echa un "
+            "vistazo al **Calendario y Resultados** y a **Grupos y Brackets**.",
+            icon="🗓️",
+        )
+        st.stop()
 
 
 def _sf_session():
@@ -54,33 +100,37 @@ def _sf_session():
 
 
 def get_results() -> Results:
-    """Resultados en estado de sesión, con sincronización automática app-wide.
+    """Resultados de la competición activa, con sincronización automática app-wide.
 
-    Carga desde la tabla ``PORRA_RESULTS`` (Snowflake) o ``results.json`` (local/
-    Cloud) y, al abrir **cualquier** página, incorpora los marcadores nuevos
-    scrapeados (caché de 15 min), de modo que todas las secciones —incluido
-    Calendario y Resultados— reflejan los marcadores sin intervención manual.
+    Cada competición persiste por separado (``data/results.json`` para el Mundial,
+    ``data/results_euro2028.json`` para la Euro…). Al abrir **cualquier** página,
+    incorpora los marcadores nuevos scrapeados (caché de 15 min), de modo que
+    todas las secciones reflejan los marcadores sin intervención manual.
     """
-    if "results" not in st.session_state:
+    comp = active_competition()
+    key = f"results::{comp.id}"
+    if key not in st.session_state:
         session = _sf_session()
-        if session is not None:
+        if session is not None and comp.id == "wc2026":
             from porra.snowflake_store import load_results_sf
-            st.session_state.results = load_results_sf(session)
+            st.session_state[key] = load_results_sf(session)
         else:
-            st.session_state.results = load_results()
-    auto_sync(st.session_state.results)
-    return st.session_state.results
+            st.session_state[key] = load_results(comp.results_path)
+    auto_sync(st.session_state[key])
+    return st.session_state[key]
 
 
 @st.cache_data(ttl=900, show_spinner="Actualizando resultados desde ESPN y Wikipedia…")
-def _fetch_games():
-    """Descarga (cacheada 15 min) los partidos publicados por las fuentes."""
+def _fetch_games(comp_id: str):
+    """Descarga (cacheada 15 min, por competición) los partidos de las fuentes."""
     from porra.sources.espn import ESPNSource
     from porra.sources.wikipedia import WikipediaSource
 
-    data = get_data()
+    comp = get_competition(comp_id)
+    data = _load_data(comp_id)
     games = []
-    for source in (ESPNSource(), WikipediaSource()):
+    for source in (ESPNSource(league=comp.espn_league),
+                   WikipediaSource(articles=list(comp.wiki_articles))):
         try:
             games.extend(source.fetch(data))
         except Exception:  # noqa: BLE001 — una fuente caída no debe romper la app
@@ -89,26 +139,27 @@ def _fetch_games():
 
 
 @st.cache_data(ttl=30, show_spinner=False)
-def _fetch_live_games():
-    """Descarga (cacheada 30 s) los partidos de ESPN para el seguimiento en directo.
+def _fetch_live_games(comp_id: str):
+    """Descarga (cacheada 30 s, por competición) los partidos de ESPN para el directo.
 
     Solo ESPN: su API JSON es rápida e informa del estado del partido (en juego /
     finalizado) y del reloj, mientras que Wikipedia no da el directo de forma fiable.
     """
     from porra.sources.espn import ESPNSource
 
+    comp = get_competition(comp_id)
     try:
-        return ESPNSource().fetch(get_data())
+        return ESPNSource(league=comp.espn_league).fetch(_load_data(comp_id))
     except Exception:  # noqa: BLE001 — el directo es best-effort
         return []
 
 
-def _combined_games():
+def _combined_games(comp_id: str):
     """Juegos para sincronizar finales: el directo (fresco, 30 s) tiene prioridad
     sobre la descarga combinada de 15 min ante un mismo enfrentamiento."""
     seen: set[tuple[str, str]] = set()
     out = []
-    for g in list(_fetch_live_games()) + list(_fetch_games()):
+    for g in list(_fetch_live_games(comp_id)) + list(_fetch_games(comp_id)):
         key = (g.home, g.away)
         if key not in seen:
             seen.add(key)
@@ -128,7 +179,7 @@ def get_live(results: Results) -> dict:
 
     data = get_data()
     teams = resolved_match_teams(data, results)
-    live = map_live_matches(data, results, _fetch_live_games(), teams)
+    live = map_live_matches(data, results, _fetch_live_games(active_id()), teams)
     return {n: lm for n, lm in live.items() if not results.has(n)}
 
 
@@ -139,7 +190,7 @@ def auto_sync(results: Results) -> int:
 
     data = get_data()
     try:
-        games = _combined_games()
+        games = _combined_games(active_id())
     except Exception:  # noqa: BLE001
         return 0
     applied = 0
@@ -173,8 +224,9 @@ def persist(results: Results) -> None:
     * Streamlit Cloud / local: ``data/results.json`` y, si hay credenciales de
       GitHub en ``st.secrets``, commit al repositorio.
     """
+    comp = active_competition()
     session = _sf_session()
-    if session is not None:
+    if session is not None and comp.id == "wc2026":
         from porra.snowflake_store import save_results_sf
         save_results_sf(session, results)
         try:
@@ -183,14 +235,14 @@ def persist(results: Results) -> None:
             pass
         return
 
-    save_results(results)
+    save_results(results, comp.results_path)
     gh = _github_secrets()
     if not gh:
         return
     content = json.dumps(to_dict(results), ensure_ascii=False, indent=2)
     outcome = commit_file(
         token=gh["token"], repo=gh["repo"],
-        path=gh.get("path", "data/results.json"),
+        path=comp.github_path,  # por competición (ignora un path fijo en secrets)
         content=content, branch=gh.get("branch", "main"),
     )
     (st.toast if outcome.ok else st.warning)(outcome.message)
@@ -206,6 +258,22 @@ def _github_secrets() -> dict | None:
     return None
 
 
+STATUS_LABELS = {"FINISHED": "Finalizado", "LIVE": "En juego", "UPCOMING": "Próximamente"}
+
+
+def render_competition_badge() -> None:
+    """Muestra en la barra lateral la competición activa y un enlace a la portada."""
+    try:
+        if not has_selection():
+            return
+        comp = active_competition()
+        with st.sidebar:
+            st.caption(f"{comp.emoji} **{comp.name}** · {STATUS_LABELS.get(comp.status, '')}")
+            st.page_link("app.py", label="🔀 Cambiar de competición")
+    except Exception:  # noqa: BLE001 — accesorio: nunca debe tumbar la página
+        pass
+
+
 def configure_page() -> None:
     try:
         st.set_page_config(page_title=APP_TITLE, page_icon=APP_ICON, layout="wide")
@@ -213,6 +281,7 @@ def configure_page() -> None:
         pass  # ya configurada (p.ej. al re-ejecutar)
     from theme import inject_theme
     inject_theme()
+    render_competition_badge()
     render_music_player()
 
 

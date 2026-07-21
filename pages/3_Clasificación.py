@@ -11,13 +11,14 @@ from page_guard import safe_page
 with safe_page():
     import analytics
     from porra.scoring import CATEGORIES, position_history, scoreboard
-    from ui_common import configure_page, fmt, get_data, get_results, proper_name
+    from ui_common import configure_page, fmt, get_data, get_results, proper_name, require_porra
 
     configure_page()
     analytics.track("Clasificación")
     st.title("🏆 Clasificación")
 
     data = get_data()
+    require_porra(data)
     results = get_results()
     sb = scoreboard(data, results)
 

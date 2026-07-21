@@ -17,7 +17,8 @@ with safe_page():
     from porra.scoring import (HONOR_POINTS_KEY, actual_honor, actual_qualified_teams,
                                score_match, score_player)
     from porra.tournament import eliminated_teams, group_positions, resolved_match_teams
-    from ui_common import HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data, get_results, proper_name
+    from ui_common import (HONOR_LABELS, PHASE_LABELS, configure_page, fmt, get_data,
+                           get_results, proper_name, require_porra)
 
     TEAM_HONOR = {"campeon", "subcampeon", "tercero"}  # categorías cuyo valor es una selección
     POS_LABEL = {1: "1º", 2: "2º", 3: "3º", 4: "4º"}
@@ -48,6 +49,7 @@ with safe_page():
     st.title("👤 Detalle por jugador")
 
     data = get_data()
+    require_porra(data)
     results = get_results()
 
     player_names = sorted((p.name for p in data.players), key=lambda n: proper_name(n).lower())

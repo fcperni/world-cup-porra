@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Qué es
 
-App **Streamlit** ("Pa porra la mía") para la porra del Mundial 2026 de 19 participantes. Lee `docs/ADMIN.xlsx` como **fuente de solo lectura** (predicciones, reglas, calendario, equipos, tabla de mejores terceros) y **reimplementa en Python** todo el cálculo. Permite introducir resultados manualmente o por scraping (ESPN principal, Wikipedia backup). Desplegada en Streamlit Cloud desde `github.com/fcperni/world-cup-porra`.
+App **Streamlit** ("Pa porra la mía") **multi-competición** (Mundiales y Eurocopas). Empezó como la porra del Mundial 2026 de 19 participantes y se generalizó para soportar varias ediciones. La **página de inicio es un selector de competición**; el resto de páginas trabajan sobre la elegida (estado de sesión). Permite introducir resultados manualmente o por scraping (ESPN principal, Wikipedia backup). Desplegada en Streamlit Cloud desde `github.com/fcperni/world-cup-porra`.
+
+Competiciones registradas (`porra/competitions.py`, `COMPETITIONS`):
+- **Mundial 2026** (`wc2026`, *Finalizado*): fuente de datos `docs/ADMIN.xlsx`; 48 equipos, 12 grupos, 104 partidos, 19 jugadores; resultados en `data/results.json`.
+- **Eurocopa 2028** (`euro2028`, *Próximamente*): **stub**. 24 equipos, 6 grupos, R16→QF→SF→Final (sin 3er puesto), 51 partidos. Aún **sin equipos ni participantes**: solo calendario + sedes (scraping en vivo de Wikipedia, con esqueleto horneado de fallback en `porra/euro2028.py`) y reglas de puntuación **copiadas del Mundial**. Resultados en `data/results_euro2028.json`.
 
 **Decisión central:** `openpyxl` no recalcula fórmulas de Excel (solo lee el valor cacheado, hoy todo a 0). Por eso el motor de puntuación y la lógica del torneo viven en `porra/`, no en el Excel.
+
+**Desacople del formato:** todo lo específico de una edición vive en `TournamentFormat` (`porra/models.py`): nº de grupos, equipos por grupo, mejores terceros que clasifican, escalera KO (`ko_order`), si hay 3er puesto, y los umbrales nº de partido→fase. `WC2026_FORMAT` y `EURO2028_FORMAT` son las dos instancias. `TournamentData.format` lo lleva y el motor (`tournament.py`/`scoring.py`) lo consulta en vez de hardcodear (48, 104, `n==6`, `[:8]`, `len==12`, `n>88`). El Mundial usa `WC2026_FORMAT` y reproduce el comportamiento previo (fidelidad intacta).
 
 ## Flujo de trabajo (git) — OBLIGATORIO
 
@@ -33,10 +39,12 @@ Termina los mensajes de commit con la línea `Co-Authored-By: Claude …`.
 ```bash
 pip install -r requirements.txt
 streamlit run app.py                       # arrancar la app
-pytest                                      # toda la suite (56 tests)
+pytest                                      # toda la suite (100 tests)
 pytest tests/test_fidelity.py -q            # validación de fidelidad al Excel
+pytest tests/test_competitions.py -q        # multi-competición + stub Euro 2028
 pytest tests/test_scoring.py::test_exacto   # un test concreto
-python -m porra.excel_loader                # verificación rápida de extracción
+python -m porra.excel_loader                # verificación rápida de extracción (Mundial)
+python -m porra.euro2028                    # verificación del calendario Euro 2028
 ```
 
 En Windows, antepón `PYTHONUTF8=1` al ejecutar scripts que impriman nombres con acentos (la consola usa cp1252 y peta con `México`, `🥇`, etc.). Los datos del fichero son UTF-8 correctos; es solo la consola.
@@ -71,6 +79,17 @@ Por partido: si aciertas signo **y** marcador → `(signo+diferencia+exacto)*bon
 - **Numeración**: grupos 1-72, 1/16 73-88, 1/8 89-96, 1/4 97-100, 1/2 101-102, 3-4 103, final 104. Bonus por ronda: grupos var. (1 ó 3), 1/16-1/4 = 2, 1/2-final = 3.
 - **Mejores terceros**: hoja `Combinaciones3` (495 combos C(12,8)); cada cruce con tercero tiene como local uno de `1A,1B,1D,1E,1G,1I,1K,1L`.
 
+## Stub de la Eurocopa 2028 — fuera de alcance / futuro
+
+El stub deja la web preparada, pero cuando la Euro tenga sorteo y porra habrá que
+completar (nada de esto está hecho aún):
+
+- **Resolución del cuadro y mejores terceros de la Euro**: `data.thirds_table` está vacía; la asignación de los 4 mejores terceros de 6 (C(6,4)=15 combinaciones, tabla UEFA) y la resolución de placeholders (`Winner Group A`, `3rd Group A/D/E/F`, `Winner Match 39`) queda dormida hasta que haya equipos. El motor ya es genérico; solo falta alimentar la tabla y los equipos.
+- **Alta de la porra de la Euro**: participantes + predicciones requerirán un `ADMIN.xlsx` de la Euro (o fuente equivalente); entonces habría que generalizar `excel_loader.py` (hoy es específico del layout del Mundial) o escribir un loader propio.
+- **Alias y banderas** (`porra/sources/base.py::_ALIASES`, `porra/flags.py::_CODE`) están cableados al elenco de 48 selecciones del Mundial; habrá que añadir las selecciones europeas.
+- **Reglas de puntuación de la Euro**: hoy se **copian** de las del Mundial (`excel_loader.load_scoring_rules`). Confirmar/ajustar cuando se decidan.
+- El **calendario** de la Euro se scrapea en vivo de Wikipedia (`porra/euro2028.py`); si Wikipedia cambia de estructura, cae al `_SKELETON` horneado. Revisar el parser si cambia el artículo.
+
 ## Despliegue
 
-Push a `fcperni/world-cup-porra` y conectar en share.streamlit.io (`app.py`). En **Settings → Secrets** pegar un PAT con *Contents: Read and write* (formato en `.streamlit/secrets.toml.example`). `.streamlit/secrets.toml` está en `.gitignore` — nunca subir el token. Solo `docs/ADMIN.xlsx` se despliega; los `.xlsx` de participantes están ignorados.
+Push a `fcperni/world-cup-porra` y conectar en share.streamlit.io (`app.py`). En **Settings → Secrets** pegar un PAT con *Contents: Read and write* (formato en `.streamlit/secrets.toml.example`). `.streamlit/secrets.toml` está en `.gitignore` — nunca subir el token. Solo `docs/ADMIN.xlsx` se despliega; los `.xlsx` de participantes están ignorados. Cada competición persiste sus resultados por separado (`data/results.json`, `data/results_euro2028.json`).

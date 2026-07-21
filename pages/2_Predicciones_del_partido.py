@@ -22,12 +22,13 @@ with safe_page():
     from porra.scoring import score_match
     from porra.tournament import resolved_match_teams
     from ui_common import (PHASE_LABELS, configure_page, fmt, get_data, get_live,
-                           get_results, proper_name)
+                           get_results, proper_name, require_porra)
 
     configure_page()
     st.title("🎯 Predicciones del partido")
 
     data = get_data()
+    require_porra(data)
     results = get_results()
 
     _WD = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]

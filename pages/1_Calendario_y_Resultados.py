@@ -15,6 +15,7 @@ with safe_page():
     from datetime import date
 
     import analytics
+    from porra.euro2028 import prettify
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import resolved_match_teams
@@ -41,7 +42,10 @@ with safe_page():
     def names(m, teams):
         """(nombre_local, nombre_visitante, es_placeholder) para el partido."""
         if m.phase is Phase.GROUPS:
-            return m.home, m.away, False
+            # en grupos son selecciones reales; en un torneo sin sorteo (Euro 2028)
+            # son ranuras ("A1") que tratamos como placeholder (sin bandera).
+            ph = data.team_by_name(m.home) is None
+            return m.home, m.away, ph
         ht, at = teams[m.number]
         h = ht.name if ht else data.bracket.get(m.number, (m.home, m.away))[0]
         a = at.name if at else data.bracket.get(m.number, (m.home, m.away))[1]
@@ -52,7 +56,8 @@ with safe_page():
         fl = "" if placeholder else flag_img(name, height=15)
         chip = f'<span class="fl">{fl}</span>' if fl else ""
         heart = " 💜" if name == "Portugal" else ""
-        nm = f'<span class="nm">{name}{heart}</span>'
+        label = prettify(name) if placeholder else name
+        nm = f'<span class="nm">{label}{heart}</span>'
         inner = f"{nm} {chip}" if side == "home" else f"{chip} {nm}"
         return f'<div class="{cls}">{inner}</div>'
 
@@ -142,7 +147,8 @@ with safe_page():
 
         played = sum(1 for m in matches if results.has(m.number))
         nota = " · se actualiza solo cada 30 s" if live else ""
-        st.caption(f"{played} de {len(matches)} partidos jugados{nota}. "
-                   "Pincha en cualquier partido para ver todas las predicciones de los 19.")
+        extra = (" Pincha en cualquier partido para ver todas las predicciones."
+                 if data.players else "")
+        st.caption(f"{played} de {len(matches)} partidos jugados{nota}.{extra}")
 
     render_matches()
