@@ -177,6 +177,8 @@ def get_live(results: Results) -> dict:
     from porra.sources.base import map_live_matches
     from porra.tournament import resolved_match_teams
 
+    if active_competition().status != "LIVE":
+        return {}  # torneo terminado o aún sin empezar: no hay directo que seguir
     data = get_data()
     teams = resolved_match_teams(data, results)
     live = map_live_matches(data, results, _fetch_live_games(active_id()), teams)
@@ -184,7 +186,14 @@ def get_live(results: Results) -> dict:
 
 
 def auto_sync(results: Results) -> int:
-    """Incorpora los resultados nuevos de las fuentes. Devuelve cuántos aplicó."""
+    """Incorpora los resultados nuevos de las fuentes. Devuelve cuántos aplicó.
+
+    Solo scrapea cuando la competición está **en juego** (``status == "LIVE"``):
+    una edición ya terminada tiene sus resultados fijos en disco y una futura aún
+    no tiene nada que actualizar, así que no tiene sentido pegarle a ESPN/Wikipedia.
+    """
+    if active_competition().status != "LIVE":
+        return 0
     from porra.sources.base import map_to_matches
     from porra.tournament import resolved_match_teams
 
@@ -269,7 +278,11 @@ def render_competition_badge() -> None:
         comp = active_competition()
         with st.sidebar:
             st.caption(f"{comp.emoji} **{comp.name}** · {STATUS_LABELS.get(comp.status, '')}")
-            st.page_link("app.py", label="🔀 Cambiar de competición")
+            # Un page_link no basta: al volver a app.py la selección sigue en sesión
+            # y muestra el dashboard. Borramos la selección y navegamos a la portada.
+            if st.button("🔀 Cambiar de competición", key="switch_comp", width="stretch"):
+                st.session_state.pop(SESSION_KEY, None)
+                st.switch_page("app.py")
     except Exception:  # noqa: BLE001 — accesorio: nunca debe tumbar la página
         pass
 
