@@ -84,6 +84,15 @@ html, body, .stApp, [data-testid="stAppViewContainer"]{
 }
 [data-testid="stSidebarNav"] li a:hover{ background:rgba(194,242,60,.08); }
 
+/* Renombra la entrada de la página principal: "app" -> "Inicio". Streamlit
+   rotula el entrypoint con el nombre del fichero y no hay API para cambiarlo
+   en apps basadas en pages/, así que ocultamos el texto y lo sustituimos por
+   un pseudo-elemento (text-transform del nav lo mostrará como "INICIO"). */
+[data-testid="stSidebarNav"] li:first-child a span{ font-size:0; }
+[data-testid="stSidebarNav"] li:first-child a span::after{
+  content:"Inicio"; font-size:1.02rem;
+}
+
 /* ---------- botones ---------- */
 .stButton>button, .stFormSubmitButton>button, .stDownloadButton>button{
   border-radius:11px; font-family:'Saira',sans-serif; font-weight:700;
