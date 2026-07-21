@@ -86,11 +86,15 @@ html, body, .stApp, [data-testid="stAppViewContainer"]{
 
 /* Renombra la entrada de la página principal: "app" -> "Inicio". Streamlit
    rotula el entrypoint con el nombre del fichero y no hay API para cambiarlo
-   en apps basadas en pages/, así que ocultamos el texto y lo sustituimos por
-   un pseudo-elemento (text-transform del nav lo mostrará como "INICIO"). */
-[data-testid="stSidebarNav"] li:first-child a span{ font-size:0; }
-[data-testid="stSidebarNav"] li:first-child a span::after{
-  content:"Inicio"; font-size:1.02rem;
+   en apps basadas en pages/, así que ocultamos el texto original y ponemos la
+   etiqueta en el propio enlace (así no depende de la altura del span, que al
+   colapsar recortaba el pseudo-elemento). El text-transform la muestra "INICIO". */
+[data-testid="stSidebarNav"] li:first-child a span,
+[data-testid="stSidebarNav"] li:first-child a p{ display:none; }
+[data-testid="stSidebarNav"] li:first-child a::after{
+  content:"Inicio";
+  font-family:'Saira',sans-serif; text-transform:uppercase;
+  letter-spacing:.04em; font-size:1.02rem; font-weight:600;
 }
 
 /* ---------- botones ---------- */
