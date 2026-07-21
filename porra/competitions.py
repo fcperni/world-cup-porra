@@ -97,8 +97,11 @@ COMPETITIONS: dict[str, Competition] = {
     ),
 }
 
-# Orden de presentación en la portada (más reciente/activa primero).
-COMPETITION_ORDER = ["wc2026", "euro2028"]
+# Orden de presentación en la portada: por año, de mayor a menor (la más
+# reciente primero). Se calcula del registro para que nuevas ediciones se
+# ordenen solas al añadirlas.
+COMPETITION_ORDER = [c.id for c in sorted(
+    COMPETITIONS.values(), key=lambda c: c.year, reverse=True)]
 DEFAULT_ID = "wc2026"
 
 
