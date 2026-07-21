@@ -23,22 +23,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .models import KO_ORDER, Phase, Player, Team, TournamentData
+from .models import WC2026_FORMAT, Phase, Player, Team, TournamentData, TournamentFormat
 from .results_store import Results
 from .tournament import compute_group_standings, group_positions, resolve_bracket
 
-CATEGORIES = [
-    "F. Grupos", "Pos. Grupos",
-    "Equipos 1/16", "Partidos 1/16",
-    "Equipos 1/8", "Partidos 1/8",
-    "Equipos 1/4", "Partidos 1/4",
-    "Equipos 1/2", "Partidos 1/2",
-    "Equipos 3-4", "Partidos 3-4",
-    "Equipos Final", "Partido Final",
-    "Cuadro de Honor",
-]
-
-# Fase -> (categoría "Equipos…", categoría "Partidos…")
+# Fase -> (categoría "Equipos…", categoría "Partidos…"). Incluye todas las fases
+# posibles; cada formato usa solo las de su ``ko_order``.
 _PHASE_CATEGORIES = {
     Phase.R32: ("Equipos 1/16", "Partidos 1/16"),
     Phase.R16: ("Equipos 1/8", "Partidos 1/8"),
@@ -47,6 +37,25 @@ _PHASE_CATEGORIES = {
     Phase.THIRD: ("Equipos 3-4", "Partidos 3-4"),
     Phase.FINAL: ("Equipos Final", "Partido Final"),
 }
+
+
+def phase_categories(fmt: TournamentFormat) -> dict:
+    """``{fase: (cat_equipos, cat_partidos)}`` solo para las fases KO del formato."""
+    return {ph: _PHASE_CATEGORIES[ph] for ph in fmt.ko_order}
+
+
+def categories_for(fmt: TournamentFormat) -> list[str]:
+    """Lista ordenada de categorías de puntuación para un formato."""
+    cats = ["F. Grupos", "Pos. Grupos"]
+    for ph in fmt.ko_order:
+        cats.extend(_PHASE_CATEGORIES[ph])
+    cats.append("Cuadro de Honor")
+    return cats
+
+
+# Categorías del Mundial (default histórico, usado por páginas que muestran el
+# desglose del Mundial). Coincide exactamente con la lista literal previa.
+CATEGORIES = categories_for(WC2026_FORMAT)
 
 HONOR_POINTS_KEY = "honor"
 
@@ -118,11 +127,12 @@ def score_group_matches(data: TournamentData, results: Results, player: Player) 
 
 def score_group_positions(data: TournamentData, results: Results, player: Player,
                           positions: dict) -> float:
+    per_group = data.format.matches_per_group
     played: dict[str, int] = {}
     for m in data.matches:
         if m.phase is Phase.GROUPS and results.has(m.number):
             played[m.group] = played.get(m.group, 0) + 1
-    complete = {g for g, n in played.items() if n == 6}
+    complete = {g for g, n in played.items() if n == per_group}
 
     total = 0.0
     for (group, pos), team in positions.items():
@@ -136,7 +146,7 @@ def score_group_positions(data: TournamentData, results: Results, player: Player
 
 def actual_qualified_teams(data: TournamentData, resolved_teams: dict) -> dict[Phase, set[str]]:
     """Selecciones que realmente alcanzan cada fase eliminatoria (las que juegan)."""
-    out: dict[Phase, set[str]] = {ph: set() for ph in KO_ORDER}
+    out: dict[Phase, set[str]] = {ph: set() for ph in data.format.ko_order}
     for m in data.matches:
         if not m.phase.is_knockout:
             continue
@@ -196,16 +206,20 @@ def score_ko_matches(data: TournamentData, results: Results, player: Player, pha
 def actual_honor(data: TournamentData, results: Results, resolved_teams: dict) -> dict[str, str | None]:
     """Cuadro de honor real: campeón/subcampeón/3º del cuadro; botas/balones manuales."""
     honor: dict[str, str | None] = {}
-    final = resolved_teams.get(104, (None, None))
-    third = resolved_teams.get(103, (None, None))
-    side_final = results.winner_side(104)
+    fmt = data.format
+    final_num = fmt.final_match_number
+    final = resolved_teams.get(final_num, (None, None))
+    side_final = results.winner_side(final_num)
     if side_final and final[0] and final[1]:
         champ = final[0] if side_final == "home" else final[1]
         runner = final[1] if side_final == "home" else final[0]
         honor["campeon"], honor["subcampeon"] = champ.name, runner.name
-    side_third = results.winner_side(103)
-    if side_third and third[0] and third[1]:
-        honor["tercero"] = (third[0] if side_third == "home" else third[1]).name
+    third_num = fmt.third_place_match_number
+    if third_num is not None:
+        third = resolved_teams.get(third_num, (None, None))
+        side_third = results.winner_side(third_num)
+        if side_third and third[0] and third[1]:
+            honor["tercero"] = (third[0] if side_third == "home" else third[1]).name
     # botas y balones (manual)
     for key in ("bota_oro", "bota_plata", "bota_bronce", "balon_oro", "balon_plata", "balon_bronce"):
         honor[key] = results.honor.get(key)
@@ -239,10 +253,11 @@ def score_player(data: TournamentData, results: Results, player: Player,
         honor_actual = actual_honor(data, results, resolved_teams)
 
     s = PlayerScore(name=player.name)
+    s.categories = {c: 0.0 for c in categories_for(data.format)}
     s.categories["F. Grupos"] = score_group_matches(data, results, player)
     s.categories["Pos. Grupos"] = score_group_positions(data, results, player, positions)
-    for phase, (eq_cat, pa_cat) in _PHASE_CATEGORIES.items():
-        s.categories[eq_cat] = score_qualified(data, player, phase, qualified_actual[phase])
+    for phase, (eq_cat, pa_cat) in phase_categories(data.format).items():
+        s.categories[eq_cat] = score_qualified(data, player, phase, qualified_actual.get(phase, set()))
         s.categories[pa_cat] = score_ko_matches(data, results, player, phase, resolved_teams)
     s.categories["Cuadro de Honor"] = score_honor(data, player, honor_actual)
     return s
@@ -291,7 +306,7 @@ def position_history(data: TournamentData, results: Results,
 
     date_by_num = {m.number: m.date.date() for m in data.matches if m.date}
     days = sorted({date_by_num[n] for n in results.matches if n in date_by_num})
-    final_date = date_by_num.get(104)
+    final_date = date_by_num.get(data.format.final_match_number)
 
     history: dict[str, list[int]] = {p.name: [] for p in data.players}
     for day in days:

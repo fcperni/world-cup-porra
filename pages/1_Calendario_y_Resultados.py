@@ -18,7 +18,6 @@ with safe_page():
     from porra.flags import flag_img
     from porra.models import Phase
     from porra.tournament import resolved_match_teams
-    from porra.venues import venue_for
     from ui_common import PHASE_LABELS, configure_page, get_data, get_live, get_results
 
     configure_page()
@@ -124,7 +123,7 @@ with safe_page():
             h, a, ph = names(m, teams)
             esp = " esp" if "España" in (h, a) else ""
             liv = " live" if m.number in live else ""
-            city, stadium = venue_for(m.number)
+            city, stadium = m.city, m.stadium
             venue = ""
             if city and stadium:
                 venue = f'<div class="fx-venue">📍 {city} · {stadium}</div>'

@@ -154,24 +154,28 @@ def group_phase_complete(data: TournamentData, results: Results) -> bool:
 
 
 def _complete_groups(data: TournamentData, results: Results) -> set[str]:
+    per_group = data.format.matches_per_group
     played: dict[str, int] = {}
     for m in data.matches:
         if m.phase is Phase.GROUPS and results.has(m.number):
             played[m.group] = played.get(m.group, 0) + 1
-    return {g for g, n in played.items() if n == 6}
+    return {g for g, n in played.items() if n == per_group}
 
 
 def third_place_ranking(standings: dict[str, list[GroupRow]]) -> list[tuple[str, GroupRow]]:
-    """Los 12 terceros ordenados de mejor a peor (puntos, DG, GF, ranking FIFA)."""
+    """Los terceros de cada grupo ordenados de mejor a peor (puntos, DG, GF, ranking FIFA)."""
     thirds = [(g, ranked[2]) for g, ranked in standings.items() if len(ranked) >= 3]
     thirds.sort(key=lambda gr: (gr[1].points, gr[1].gd, gr[1].gf, -gr[1].team.rank), reverse=True)
     return thirds
 
 
-def qualified_thirds_groups(standings: dict[str, list[GroupRow]]) -> list[str]:
-    """Letras de los 8 grupos cuyos terceros se clasifican, ordenadas alfabéticamente."""
-    best8 = third_place_ranking(standings)[:8]
-    return sorted(g for g, _ in best8)
+def qualified_thirds_groups(standings: dict[str, list[GroupRow]], n_thirds: int = 8) -> list[str]:
+    """Letras de los ``n_thirds`` grupos cuyos terceros se clasifican, ordenadas alfabéticamente.
+
+    El default 8 es el del Mundial; el motor pasa ``data.format.thirds_qualify``.
+    """
+    best = third_place_ranking(standings)[:n_thirds]
+    return sorted(g for g, _ in best)
 
 
 def clinched_knockout(data: TournamentData, results: Results,
@@ -231,8 +235,8 @@ def clinched_knockout(data: TournamentData, results: Results,
             if safe:
                 clinched.add(team)
 
-    if len(complete) == 12:  # terceros decididos solo con todos los grupos jugados
-        for g in qualified_thirds_groups(standings):
+    if len(complete) == data.format.n_groups:  # terceros decididos solo con todos los grupos jugados
+        for g in qualified_thirds_groups(standings, data.format.thirds_qualify):
             if len(standings.get(g, [])) >= 3:
                 clinched.add(standings[g][2].team.name)
 
@@ -336,12 +340,13 @@ def resolve_bracket(data: TournamentData, results: Results,
     for (g, pos), team in locked_group_positions(data, results, standings).items():
         resolved[f"{pos}{g}"] = team
 
-    # mejores terceros (requiere los 12 grupos completos)
-    if len(complete) == 12 and data.thirds_table:
-        combo = "".join(qualified_thirds_groups(standings))
+    # mejores terceros (requiere todos los grupos completos); solo alimentan la
+    # primera ronda eliminatoria del formato (R32 en el Mundial, R16 en la Euro)
+    if len(complete) == data.format.n_groups and data.thirds_table:
+        combo = "".join(qualified_thirds_groups(standings, data.format.thirds_qualify))
         slot_to_group = data.thirds_table.get(combo, {})
         for n, (home, away) in data.bracket.items():
-            if n > 88:
+            if data.format.phase_for_number(n) is not data.format.first_ko_phase:
                 continue
             for token, winner_slot in ((home, away), (away, home)):
                 if token.startswith("3") and len(token) > 2:
@@ -413,8 +418,9 @@ def eliminated_teams(data: TournamentData, results: Results,
             out.add(at.name if side == "home" else ht.name)
 
     complete = _complete_groups(data, results)
-    all_done = len(complete) == 12
-    best_thirds = set(qualified_thirds_groups(standings)) if all_done else set()
+    all_done = len(complete) == data.format.n_groups
+    best_thirds = (set(qualified_thirds_groups(standings, data.format.thirds_qualify))
+                   if all_done else set())
     for g in complete:
         ranked = standings.get(g, [])
         if len(ranked) >= 4:

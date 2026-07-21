@@ -29,8 +29,92 @@ class Phase(str, Enum):
         return self is not Phase.GROUPS
 
 
-# Orden de avance de las eliminatorias (de qué fase salen los clasificados a la siguiente).
+# Orden de avance de las eliminatorias del Mundial (de qué fase salen los
+# clasificados a la siguiente). Se mantiene como default histórico; la verdad
+# operativa vive en ``TournamentData.format.ko_order`` (ver ``TournamentFormat``).
 KO_ORDER = [Phase.R32, Phase.R16, Phase.QF, Phase.SF, Phase.THIRD, Phase.FINAL]
+
+
+@dataclass(frozen=True)
+class TournamentFormat:
+    """Descripción del formato de un torneo, para desacoplar el motor de una edición.
+
+    Recoge todo lo que hasta ahora estaba hardcodeado al Mundial 2026 (48 equipos,
+    12 grupos, 8 mejores terceros, escalera R32→…→Final con 3.er puesto). El
+    Mundial y la Eurocopa comparten motor y solo difieren en este objeto.
+    """
+
+    kind: str                          # "WORLD_CUP" | "EURO"
+    n_groups: int                      # 12 | 6
+    teams_per_group: int               # 4
+    group_letters: tuple[str, ...]     # ("A".."L") | ("A".."F")
+    thirds_qualify: int                # nº de mejores terceros que clasifican (8 | 4)
+    ko_order: tuple[Phase, ...]        # escalera KO (empieza en R32 | en R16)
+    has_third_place: bool              # ¿hay partido por el 3.er puesto? (Mundial sí, Euro no)
+    total_matches: int                 # 104 | 51
+    # umbrales (límite superior inclusive, fase) en orden ascendente de nº de partido
+    phase_bounds: tuple[tuple[int, Phase], ...]
+
+    @property
+    def matches_per_group(self) -> int:
+        """Partidos por grupo = C(k, 2) (6 para grupos de 4)."""
+        k = self.teams_per_group
+        return k * (k - 1) // 2
+
+    @property
+    def first_ko_phase(self) -> Phase:
+        """Primera ronda eliminatoria (la que reciben los clasificados de grupos)."""
+        return self.ko_order[0]
+
+    def phase_for_number(self, n: int) -> Phase:
+        """Fase a la que pertenece el número de partido ``n``."""
+        for limit, phase in self.phase_bounds:
+            if n <= limit:
+                return phase
+        return self.ko_order[-1]
+
+    @property
+    def final_match_number(self) -> int:
+        """La final es siempre el último partido del calendario."""
+        return self.total_matches
+
+    @property
+    def third_place_match_number(self) -> Optional[int]:
+        """Partido por el 3.er puesto (penúltimo), o None si el formato no lo tiene."""
+        return self.total_matches - 1 if self.has_third_place else None
+
+
+# Formato del Mundial 2026: 48 equipos, 12 grupos de 4, 8 mejores terceros,
+# R32→R16→QF→SF→3-4→Final; 104 partidos (grupos 1-72, R32 73-88, R16 89-96,
+# QF 97-100, SF 101-102, 3-4 103, Final 104).
+WC2026_FORMAT = TournamentFormat(
+    kind="WORLD_CUP",
+    n_groups=12,
+    teams_per_group=4,
+    group_letters=tuple(chr(ord("A") + i) for i in range(12)),
+    thirds_qualify=8,
+    ko_order=(Phase.R32, Phase.R16, Phase.QF, Phase.SF, Phase.THIRD, Phase.FINAL),
+    has_third_place=True,
+    total_matches=104,
+    phase_bounds=((72, Phase.GROUPS), (88, Phase.R32), (96, Phase.R16),
+                  (100, Phase.QF), (102, Phase.SF), (103, Phase.THIRD), (104, Phase.FINAL)),
+)
+
+# Formato de la Eurocopa 2028: 24 equipos, 6 grupos de 4, 4 mejores terceros,
+# R16→QF→SF→Final (SIN 3.er puesto, como toda Euro desde 1984); 51 partidos
+# (grupos 1-36, R16 37-44, QF 45-48, SF 49-50, Final 51).
+EURO2028_FORMAT = TournamentFormat(
+    kind="EURO",
+    n_groups=6,
+    teams_per_group=4,
+    group_letters=tuple(chr(ord("A") + i) for i in range(6)),
+    thirds_qualify=4,
+    ko_order=(Phase.R16, Phase.QF, Phase.SF, Phase.FINAL),
+    has_third_place=False,
+    total_matches=51,
+    phase_bounds=((36, Phase.GROUPS), (44, Phase.R16), (48, Phase.QF),
+                  (50, Phase.SF), (51, Phase.FINAL)),
+)
 
 
 @dataclass(frozen=True)
@@ -62,6 +146,8 @@ class Match:
     date: Optional[datetime] = None
     bonus: int = 1                  # multiplicador de puntos (columna I de ADMIN)
     admin_row: Optional[int] = None # fila de ADMIN con las predicciones de este partido
+    city: Optional[str] = None      # ciudad de la sede (la rellena el loader)
+    stadium: Optional[str] = None   # estadio de la sede (la rellena el loader)
 
     @property
     def is_placeholder(self) -> bool:
@@ -164,6 +250,10 @@ class TournamentData:
     #   combinación de grupos clasificados (p.ej. "EFGHIJKL") ->
     #   {ranura del primero ("1A".."1L"): letra de grupo del tercero ("E"..)}
     thirds_table: dict[str, dict[str, str]] = field(default_factory=dict)
+    # formato del torneo (desacopla el motor de una edición concreta); por
+    # defecto el del Mundial 2026 para no romper construcciones existentes.
+    format: TournamentFormat = WC2026_FORMAT
+    competition_id: str = "wc2026"
 
     def team_by_name(self, name: str) -> Optional[Team]:
         return next((t for t in self.teams if t.name == name), None)

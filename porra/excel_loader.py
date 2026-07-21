@@ -35,6 +35,7 @@ import openpyxl
 
 from .models import (
     KO_ORDER,
+    WC2026_FORMAT,
     KnockoutPrediction,
     Match,
     Phase,
@@ -44,6 +45,7 @@ from .models import (
     Team,
     TournamentData,
 )
+from .venues import venue_for
 
 DEFAULT_XLSX = Path(__file__).resolve().parent.parent / "docs" / "ADMIN.xlsx"
 
@@ -189,12 +191,17 @@ def load_tournament(xlsx_path: Path | str = DEFAULT_XLSX) -> TournamentData:
         if m.phase is Phase.GROUPS:
             m.group = team_group.get(m.home, m.group)
 
+    # sede (ciudad + estadio) fija por número de partido del calendario FIFA
+    for m in matches:
+        m.city, m.stadium = venue_for(m.number)
+
     _attach_admin_metadata(wb_v["ADMIN"], wb_f["ADMIN"], matches, wc_row_to_num)
     players = _load_players(wb_v["ADMIN"], matches)
     thirds_table = _load_thirds_table(wb_v["Combinaciones3"])
 
     return TournamentData(teams=teams, matches=matches, players=players, rules=rules,
-                          bracket=bracket, thirds_table=thirds_table)
+                          bracket=bracket, thirds_table=thirds_table,
+                          format=WC2026_FORMAT, competition_id="wc2026")
 
 
 def _load_thirds_table(ws) -> dict[str, dict[str, str]]:
