@@ -22,8 +22,11 @@ _CSS = """
 }
 
 /* Oculta la página Admin del menú lateral (sigue accesible por URL /Admin y
-   protegida por contraseña). No es seguridad, solo evita mostrar el enlace. */
-[data-testid="stSidebarNav"] a[href$="/Admin"]{ display:none; }
+   protegida por contraseña). No es seguridad, solo evita mostrar el enlace.
+   Cubrimos varias formas de href por si Streamlit cambia el formato de la nav. */
+[data-testid="stSidebarNav"] a[href$="/Admin"],
+[data-testid="stSidebarNav"] a[href*="Admin" i],
+[data-testid="stSidebarNav"] li:has(a[href*="Admin" i]){ display:none; }
 
 /* ---------- fondo: tinta + focos + grano ---------- */
 .stApp{
